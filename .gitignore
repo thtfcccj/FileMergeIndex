@@ -1,0 +1,8 @@
+/%SystemDrive%
+/debug
+/release
+/tmp
+/*.user
+/FileMergeIndex.ncb
+/*.idb
+/*.pdb
