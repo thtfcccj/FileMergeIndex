@@ -42,6 +42,7 @@
 #ifndef DIALOG_H
 #define DIALOG_H
 
+#include <QtGui>
 #include <QDialog>
 
 QT_BEGIN_NAMESPACE
@@ -67,6 +68,10 @@ private slots:
 private:
     QLabel *openFileNameLabel;
 	QLabel *directoryLabel;
+
+    //处理程序:
+    bool Pro_ResourceMerge(QTextStream &t);  //资源文件合并
+
 };
 
 #endif

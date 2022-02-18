@@ -39,7 +39,6 @@
 **
 ****************************************************************************/
 
-#include <QtGui>
 
 #include "dialog.h"
 
@@ -52,15 +51,15 @@ Dialog::Dialog(QWidget *parent)
     openFileNameLabel = new QLabel;
     openFileNameLabel->setFrameStyle(frameStyle);
     QPushButton *openFileNameButton =
-            new QPushButton(tr("打开脚本文件.."));
+            new QPushButton(tr("打开脚本文件..."));
 
      directoryLabel = new QLabel;
      directoryLabel->setFrameStyle(frameStyle);
      QPushButton *directoryButton =
-             new QPushButton(tr("打开待处理文件目录"));
+             new QPushButton(tr("打开待处理文件目录..."));
 
      QPushButton *saveFileNameButton =
-             new QPushButton(tr("保存结果.."));
+             new QPushButton(tr("执行并保存结果..."));
 
     connect(openFileNameButton, SIGNAL(clicked()),
             this, SLOT(setOpenFileName()));
@@ -90,7 +89,7 @@ Dialog::Dialog(QWidget *parent)
 
     setLayout(layout);
 
-    setWindowTitle(tr("CCJ多功能文件合并器"));
+    setWindowTitle(tr("CCJ多功能文件合并器 V1.10       thtfcccj倾情制作"));
 }
 
 void Dialog::setOpenFileName()
@@ -121,7 +120,7 @@ void Dialog::setOpenFileName()
 
 void Dialog::setSaveFileName()
 {
-  //============================================打开脚本文件并处理信息===================================
+  //打开脚本文件并处理信息
   QFile *descFile = new QFile(openFileNameLabel->text());
   if(descFile->open(QIODevice::ReadOnly) == false){//文件打开失败
 
@@ -135,33 +134,56 @@ void Dialog::setSaveFileName()
   }
   QTextStream t(descFile);//脚本为文件流
 
-  //============================================获取并检查前两行信息===================================
-  //首行为“文件合并V1.00;”
+  //获取并检查首行脚本类型信息并分别处理
   QString Line = t.readLine();//
   QStringList Para = Line.split(';'); //;后为注释
-  if(Para[0] != tr("ccj文件合并描述脚本V1.00")){ //首行描述不对
+
+  bool Resume;
+  if(Para[0] == tr("ccj文件合并描述脚本V1.00")){//资源合并器 原描述兼容 
+    Resume = Pro_ResourceMerge(t); 
+  }
+  else if(Para[0] == tr("ccj资源文件合并脚本V1.00")){//新描述
+    Resume = Pro_ResourceMerge(t); //资源合并器
+  }
+  //else if(Para[0] == tr("ccj bin文件合并描述脚本V1.00")){//
+  //  Resume = Pro_BinMerge(t); //bin文件合并器
+  //}
+  else{
     QMessageBox msgBox;
-    msgBox.setText(tr("文件描述错误，请加载首行为“ccj文件合并描述脚本V1.00;”的txt文件"));
+    msgBox.setText(tr("首行文件描述不能识别，请加载正确的脚本文件!"));
     msgBox.exec();
 
-    descFile->close();
-    delete descFile;
-    return;
-
+	Resume = false;
   }
+
+   descFile->close();
+   delete descFile;
+
+  //处理成功返回
+  if(Resume == true){
+    QMessageBox finalmsgBox;
+    QString finalMsg = tr("处理成功！                   ");
+    finalmsgBox.setText(finalMsg);
+    finalmsgBox.exec();
+  }
+}
+
+/************************************************************************************************
+                   ccj资源文件合并脚本处理程序
+************************************************************************************************/
+bool  Dialog::Pro_ResourceMerge(QTextStream &t) //返回true处理完成
+{
+  //=======================================读取配置信息========================================
   //第二行指定目标起始位置，需以十六进制表示
-  Line = t.readLine();
-  Para = Line.split(';'); //;后为注释
+  QString Line = t.readLine();
+  QStringList Para = Line.split(';'); //;后为注释
   bool OK;
   unsigned int Base = Para[0].toInt(&OK,16);
   if(OK == false){
     QMessageBox msgBox;
     msgBox.setText(tr("起始位置指定无效，应以“0x00000000”方式表达!"));
     msgBox.exec();
-
-    descFile->close();
-    delete descFile;
-    return;
+    return false;
   }
 
 
@@ -174,10 +196,7 @@ void Dialog::setSaveFileName()
     QMessageBox msgBox;
     msgBox.setText(tr("合并文件个数描述错误，第二行应为1~1000之间的数字，并以“;”结尾"));
     msgBox.exec();
-
-    descFile->close();
-    delete descFile;
-    return;
+    return false;
   }
   //=======================================获取并缓存得路径位置========================================
   //第四行起，为需合并文件绝对路径,以;空行结尾,先获得路径位置
@@ -196,16 +215,13 @@ void Dialog::setSaveFileName()
     QMessageBox msgBox;
     msgBox.setText(tr("第三行起，未找到需合并文件位置"));
     msgBox.exec();
-
-    descFile->close();
-    delete descFile;
-    return;
+    return false;
   }
 
   //============================================得到目标文件===================================
-  QString fileName = QFileDialog::getSaveFileName(0, tr("保存文件..."),QDir::homePath(),tr("Bin格式(*.Bin)"));
+  QString fileName = QFileDialog::getSaveFileName(0, tr("保存文件..."),QDir::currentPath(),tr("Bin格式(*.Bin)"));
   QFile *distFile = new QFile(fileName);
-  if(distFile->open(QIODevice::WriteOnly) == false){//文件打开失败
+  if(distFile->open(QIODevice::ReadWrite) == false){//文件打开失败
 
 	QMessageBox finalmsgBox;
 	QString finalMsg = tr("未指定保存文件，或加载处理异常!");
@@ -213,7 +229,7 @@ void Dialog::setSaveFileName()
 	finalmsgBox.exec();
 
     delete distFile;
-    return;
+    return false;
   }
 
   //=======================================填充目标文件前部的数据头索引========================================
@@ -234,11 +250,9 @@ void Dialog::setSaveFileName()
 	  finalmsgBox.setText(finalMsg);
 	  finalmsgBox.exec();
 
-	  descFile->close();
-      delete descFile;
       //distFile->close();
       delete distFile;
-      return;
+      return false;
     };
     qint64 Size = FileInfo.size();
     if(Size >= (qint64)(0xffffffff - curPos)){
@@ -247,11 +261,9 @@ void Dialog::setSaveFileName()
 	  finalmsgBox.setText(finalMsg);
 	  finalmsgBox.exec();
 
-	  descFile->close();
-      delete descFile;
       //distFile->close();
       delete distFile;
-      return;
+      return false;
     }
 	//填充充当前数据起始位置
     dest << (qint32)curPos;
@@ -279,11 +291,9 @@ void Dialog::setSaveFileName()
 	  finalmsgBox.exec();
 
       delete curFile;
-	  descFile->close();
-      delete descFile;
       //distFile->close();
       delete distFile;
-      return;
+      return false;
     };
 	qint64 curSize = curFile->size();
     if(curSize > (qint64)(0xffffffff - curPos)){
@@ -293,11 +303,10 @@ void Dialog::setSaveFileName()
 	  finalmsgBox.exec();
 
       delete curFile;
-	  descFile->close();
-      delete descFile;
+      curFile->close();
       //distFile->close();
       delete distFile;
-      return;
+      return false;
     }
 	//加载数据流
     QDataStream source(curFile);  //读数据流
@@ -308,19 +317,18 @@ void Dialog::setSaveFileName()
 	//更新下个数据起始位置
     curPos += curSize; 
     delete raw;
+
+    curFile->close();
     delete curFile;
   }
 
 
-  //=======================================最后保存文件并提示成功==============================
-  descFile->close();
-  delete descFile;
-  distFile->close();
+  distFile->close(); //保存
   delete distFile;
-  //提示成功
-  QMessageBox finalmsgBox;
-  QString finalMsg = tr("文件合并成功!");
-  finalmsgBox.setText(finalMsg);
-  finalmsgBox.exec();
+  return true; //处理完成
  
 }
+
+
+
+
