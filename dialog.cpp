@@ -44,7 +44,7 @@
 
 
 Dialog::Dialog(QWidget *parent)
-    : QDialog(parent)
+: QDialog(parent),Fun(-1)
 {
     int frameStyle = QFrame::Sunken | QFrame::Panel;
 
@@ -55,7 +55,7 @@ Dialog::Dialog(QWidget *parent)
 
      directoryLabel = new QLabel;
      directoryLabel->setFrameStyle(frameStyle);
-     QPushButton *directoryButton =
+     directoryButton =
              new QPushButton(tr("打开待处理文件目录..."));
 
      QPushButton *saveFileNameButton =
@@ -89,7 +89,7 @@ Dialog::Dialog(QWidget *parent)
 
     setLayout(layout);
 
-    setWindowTitle(tr("CCJ多功能文件合并器 V1.10       thtfcccj倾情制作"));
+    setWindowTitle(tr("CCJ多功能文件合并编译器 V1.10       thtfcccj倾情制作"));
 }
 
 void Dialog::setOpenFileName()
@@ -102,23 +102,45 @@ void Dialog::setOpenFileName()
                                 tr("Text Files (*.txt)"),
                                 &selectedFilter,
                                 options);
-    if (!fileName.isEmpty())
+	if (!fileName.isEmpty()){
         openFileNameLabel->setText(fileName);
+	    Pro(true);//编译预处理
+	}
 }
 
  void Dialog::setExistingDirectory()
  {
-     QFileDialog::Options options = QFileDialog::DontResolveSymlinks | QFileDialog::ShowDirsOnly;
-     QString directory = QFileDialog::getExistingDirectory(this,
-                                 tr("待处理文件目录..."),
-                                 directoryLabel->text(),
-                                 options);
-     if (!directory.isEmpty())
-         directoryLabel->setText(directory);
+	 if(Fun == 3){//打开编译文件
+		QFileDialog::Options options;
+		QString selectedFilter;
+		QString fileName = QFileDialog::getOpenFileName(this,
+									tr("需编译的csv格式文件..."),
+									openFileNameLabel->text(),
+									tr("Text Files (*.csv)"),
+									&selectedFilter,
+									options);
+		if (!fileName.isEmpty())
+			directoryLabel->setText(fileName);
+	 }
+	 else{//打开目录
+		 QFileDialog::Options options = QFileDialog::DontResolveSymlinks | QFileDialog::ShowDirsOnly;
+		 QString directory = QFileDialog::getExistingDirectory(this,
+									 tr("待处理文件目录..."),
+									 directoryLabel->text(),
+									 options);
+		 if (!directory.isEmpty())
+			 directoryLabel->setText(directory);
+	 }
  }
 
 
 void Dialog::setSaveFileName()
+{
+  Pro(false);//编译
+}
+
+//处理文件
+void Dialog::Pro(bool isIdent)//是否为识别
 {
   //打开脚本文件并处理信息
   QFile *descFile = new QFile(openFileNameLabel->text());
@@ -138,16 +160,36 @@ void Dialog::setSaveFileName()
   QString Line = t.readLine();//
   QStringList Para = Line.split(';'); //;后为注释
 
-  bool Resume;
-  if(Para[0] == tr("ccj文件合并描述脚本V1.00")){//资源合并器 原描述兼容 
-    Resume = Pro_ResourceMerge(t); 
+  bool Resume = false;//识别时不提示
+
+  if((Para[0] == tr("ccj文件合并描述脚本V1.00")) || //资源合并器 原描述兼容
+     (Para[0] == tr("ccj资源文件合并脚本V1.00"))){  //新描述
+    if(Fun != 1){//脚本切换时
+      Fun = 1;
+      directoryLabel->setText("");
+	  directoryButton->setText(tr("打开待合并文件所在目录..."));
+	}
+    if(isIdent == false) Resume = Pro_ResourceMerge(t); 
   }
-  else if(Para[0] == tr("ccj资源文件合并脚本V1.00")){//新描述
-    Resume = Pro_ResourceMerge(t); //资源合并器
-  }
+
   else if(Para[0] == tr("ccj bin文件合并描述脚本V1.00")){//
-    Resume = Pro_BinMerge(t); //bin文件合并器
+    if(Fun != 2){//脚本切换时
+      Fun = 2;
+      directoryLabel->setText("");
+	  directoryButton->setText(tr("打开待合并文件所在目录..."));
+	}
+     if(isIdent == false) Resume = Pro_BinMerge(t); //bin文件合并器
   }
+
+  else if(Para[0] == tr("ccj 配置编译选项V1.00")){//
+    if(Fun != 3){//脚本切换时
+      Fun = 3;
+      directoryLabel->setText("");
+	  directoryButton->setText(tr("打开需编译的csv格式文件..."));
+	}
+     if(isIdent == false) Resume = Pro_CfgCompile(t); //bin文件合并器
+  }
+
   else{
     QMessageBox msgBox;
     msgBox.setText(tr("首行文件描述不能识别，请加载正确的脚本文件!"));

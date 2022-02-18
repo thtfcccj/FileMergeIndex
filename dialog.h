@@ -66,12 +66,19 @@ private slots:
     void setSaveFileName();
 
 private:
+	QPushButton *directoryButton;
     QLabel *openFileNameLabel;
 	QLabel *directoryLabel;
+ 
+    unsigned char Fun;	
 
-    //处理程序:
+    //处理文件
+    void Dialog::Pro(bool isIdent); //是否为识别
+
+	//处理程序:
     bool Pro_ResourceMerge(QTextStream &t);  //资源文件合并
     bool Pro_BinMerge(QTextStream &t);       //bin文件合并
+    bool Pro_CfgCompile(QTextStream &t);     //配置文件编译
 };
 
 #endif
