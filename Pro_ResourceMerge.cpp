@@ -1,0 +1,175 @@
+/************************************************************************************************
+
+                   ccj资源文件合并脚本处理模块
+
+************************************************************************************************/
+
+
+#include "dialog.h"
+
+bool  Dialog::Pro_ResourceMerge(QTextStream &t) //返回true处理完成
+{
+  //=======================================读取配置信息========================================
+  //第二行指定目标起始位置，需以十六进制表示
+  QString Line = t.readLine();
+  QStringList Para = Line.split(';'); //;后为注释
+  bool OK;
+  unsigned int Base = Para[0].toLongLong(&OK,16);
+  if(OK == false){
+    QMessageBox msgBox;
+    msgBox.setText(tr("起始位置指定无效，应以“0xnnnnnnnn”方式表达!"));
+    msgBox.exec();
+    return false;
+  }
+
+
+  //第三行得到合并文件个数,决定数据头长度,后续指定的文件多出部分不合并，不够部分补0x00000000
+  Line = t.readLine();
+  Para = Line.split(';'); //;后为注释
+  //得到合并文件个数
+  int binFileCount = Para[0].toInt();
+  if((binFileCount <= 0) || (binFileCount > 1000)){
+    QMessageBox msgBox;
+    msgBox.setText(tr("合并文件个数描述错误，第二行应为1~1000之间的数字，并以“;”结尾"));
+    msgBox.exec();
+    return false;
+  }
+  //=======================================获取并缓存得路径位置========================================
+  //第四行起，为需合并文件绝对路径,以;空行结尾,先获得路径位置
+  QStringList listPath;
+  int ValidCount = 0;
+  for(; ValidCount < binFileCount; ValidCount++){
+	Line = t.readLine();
+	Para = Line.split(';'); //;后为注释
+    if(Para[0].isEmpty()) break; //结束了
+    QString Pos;
+	if(Para[0][0] == ' ') Pos = ' '; //空格表示中间预留
+    else Pos = directoryLabel->text() + '\\' + Para[0]; //组合成绝对目录
+    listPath << Pos;
+  }
+  if(ValidCount < 1){
+    QMessageBox msgBox;
+    msgBox.setText(tr("第三行起，未找到需合并文件位置"));
+    msgBox.exec();
+    return false;
+  }
+
+  //============================================得到临时目标文件===================================
+  QTemporaryFile distFile;
+  if(!distFile.open()) {//临时文件创建失败
+	QMessageBox finalmsgBox;
+	QString finalMsg = tr("文件处理所需的临时文件申请空间失败，请检查系统空间否满!");
+	finalmsgBox.setText(finalMsg);
+	finalmsgBox.exec();
+
+    return false;
+  }
+
+  //=======================================填充目标文件前部的数据头索引========================================
+  //为空预留，有后续不满时，直接填充0x00000000
+  unsigned long curPos = (binFileCount + 1) * 4 + Base;//用于检查文件容量超限情况
+  QDataStream dest(&distFile);  //结果为数据流，需二进制处理
+  for(int Pos = 0; Pos < ValidCount; Pos++){
+   //空文件预留
+	if(listPath[Pos][0] == ' '){
+      dest << (quint32)curPos;
+	  continue;
+	}
+	//获取文件信息中的大小
+    QFileInfo FileInfo(listPath[Pos]);
+    if(FileInfo.exists() == false){//文件不存在时
+	  QMessageBox finalmsgBox;
+	  QString finalMsg = listPath[Pos] + tr(" 未被找到,预处理已中止！");
+	  finalmsgBox.setText(finalMsg);
+	  finalmsgBox.exec();
+
+      distFile.close();
+      return false;
+    };
+    qint64 Size = FileInfo.size();
+    if(Size >= (qint64)(0xffffffff - curPos)){
+	  QMessageBox finalmsgBox;
+	  QString finalMsg = listPath[Pos] + tr(" 合并后文件过大,预处理已中止！");
+	  finalmsgBox.setText(finalMsg);
+	  finalmsgBox.exec();
+
+      distFile.close();
+      return false;
+    }
+	//填充充当前数据起始位置
+    dest << (quint32)curPos;
+	//更新下个数据起始位置
+    curPos += Size; 
+  }
+  //后续不满时，直接填充最后值,并在最后加上结束位置
+  for(int Pos = ValidCount; Pos <= binFileCount; Pos++){
+    dest << (quint32)curPos;
+  }
+
+  //=======================================填充目标数据========================================
+  curPos = (binFileCount + 1) * 4;//用于检查文件容量超限情况
+  for(int Pos = 0; Pos < ValidCount; Pos++){
+   //空文件跳过
+	if(listPath[Pos][0] == ' '){
+	  continue;
+	}
+    //加载文件
+    QFile *curFile = new QFile(listPath[Pos]);
+    if(curFile->open(QIODevice::ReadOnly) == false){//文件打开失败
+	  QMessageBox finalmsgBox;
+	  QString finalMsg = listPath[Pos] + tr(" 未找到或打开失败,合并已中止！");
+	  finalmsgBox.setText(finalMsg);
+	  finalmsgBox.exec();
+
+      delete curFile;
+      distFile.close();
+      return false;
+    };
+	qint64 curSize = curFile->size();
+    if(curSize > (qint64)(0xffffffff - curPos)){
+	  QMessageBox finalmsgBox;
+	  QString finalMsg = listPath[Pos] + tr(" 合并后文件过大,合并已中止！");
+	  finalmsgBox.setText(finalMsg);
+	  finalmsgBox.exec();
+
+      delete curFile;
+      curFile->close();
+      distFile.close();
+      return false;
+    }
+	//加载数据流
+    QDataStream source(curFile);  //读数据流
+    char *raw = new char[curSize];
+	source.readRawData(raw, curSize);
+	//合并入数据流
+    dest.writeRawData(raw ,curSize);//合并
+	//更新下个数据起始位置
+    curPos += curSize; 
+    delete raw;
+
+    curFile->close();
+    delete curFile;
+  }
+
+  //======================================正确时最后保存数据========================================
+  distFile.flush();//保存
+  QString fileName = QFileDialog::getSaveFileName(0, tr("保存成功生成的文件..."),QDir::currentPath(),tr("Bin格式(*.Bin)"));
+  QFile::remove (fileName); //强制先删除
+  if(!distFile.copy(fileName)){
+	QMessageBox finalmsgBox;
+	QString finalMsg = tr("未指定保存文件或加载处理异常!");
+	finalmsgBox.setText(finalMsg);
+	finalmsgBox.exec();
+
+    distFile.close();
+    return false;
+  }
+
+  distFile.close();
+  return true; //处理完成
+ 
+}
+
+
+
+

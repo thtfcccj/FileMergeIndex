@@ -71,7 +71,7 @@ private:
 
     //处理程序:
     bool Pro_ResourceMerge(QTextStream &t);  //资源文件合并
-
+    bool Pro_BinMerge(QTextStream &t);       //bin文件合并
 };
 
 #endif
