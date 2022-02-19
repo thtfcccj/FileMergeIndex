@@ -161,7 +161,7 @@ void Dialog::Pro(bool isIdent)//是否为识别
   QStringList Para = Line.split(';'); //;后为注释
 
   bool Resume = false;//识别时不提示
-
+  IsDisFinal = false;//默认允许提示
   if((Para[0] == tr("ccj文件合并描述脚本V1.00")) || //资源合并器 原描述兼容
      (Para[0] == tr("ccj资源文件合并脚本V1.00"))){  //新描述
     if(Fun != 1){//脚本切换时
@@ -202,7 +202,7 @@ void Dialog::Pro(bool isIdent)//是否为识别
    delete descFile;
 
   //处理成功返回
-  if(Resume == true){
+  if((Resume == true) &&  (IsDisFinal == false)){
     QMessageBox finalmsgBox;
     QString finalMsg = tr("处理成功！                   ");
     finalmsgBox.setText(finalMsg);

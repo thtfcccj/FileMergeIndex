@@ -7,6 +7,20 @@
 
 #include "dialog.h"
 
+
+
+//单种色转换为6色,四舍五入
+unsigned char Dialog::Scolor256To6(unsigned char sColor)
+{
+  if(sColor < (0x00 + 25)) return 0;  
+  if(sColor < (0x33 + 25)) return 1;  
+  if(sColor < (0x66 + 25)) return 2;
+  if(sColor < (0x99 + 25)) return 3;  
+  if(sColor < (0xCC + 25)) return 4;
+  return 5;
+}
+
+
 bool  Dialog::Pro_CfgCompile(QTextStream &t) //返回true处理完成
 {
   //=======================================读取配置信息========================================
@@ -25,10 +39,10 @@ bool  Dialog::Pro_CfgCompile(QTextStream &t) //返回true处理完成
   //第三行指定多字节时组合方式
   Line = t.readLine();
   Para = Line.split(';'); //;后为注释
-  bool isMsb = Para[0].toInt(&OK);
+  bool isMsb = !Para[0].toInt(&OK);//相反
   if(OK == false){
     QMessageBox msgBox;
-    msgBox.setText(tr("对齐方式指定无效，应为0 或 1!"));
+    msgBox.setText(tr("对齐方式指定无效，应为0 或 1"));
     msgBox.exec();
     return false;
   }
@@ -86,8 +100,8 @@ bool  Dialog::Pro_CfgCompile(QTextStream &t) //返回true处理完成
       distFile.close();
 	    csvFile->close();
       delete csvFile;
-      return false;	  }
-
+      return false;	  
+    }
     //首行为目标位置，基址为空时直接跳过
 	  if(Para[0][0] == ' '){
 	    continue;
@@ -128,15 +142,23 @@ bool  Dialog::Pro_CfgCompile(QTextStream &t) //返回true处理完成
     //======================================数据区第二,三行编译========================================
     //以最大方式预读
     bool bs64,bu64, bh64;
-    qint64 s64 =  Para[2].toInt(&bs64,10);
-    quint64 u64 =  Para[2].toInt(&bu64,10);
-    quint64 h64 =  Para[2].toInt(&bh64,16);
-    int Len = 0; ///不能识别的类型标识,负表示错误
+    qint64 s64 =  Para[2]. toLongLong (&bs64,10);
+    quint64 u64 =  Para[2]. toULongLong (&bu64,10);
+    quint64 h64 =  Para[2]. toULongLong (&bh64,16);
+    int Len = 0; ///不填充,负表示错误
     //根据类型标识检查并移入数据
     if(Para[1] == "U8"){
       if(bu64 == false) Len = -1; //变量值表达错误
       else if((u64 < 0) || (u64 > 0xff)) Len = -2;//变量值超限
       else{ dest << (quint8)u64; Len = 1; }
+    }
+    else if(Para[1] == "STRING"){
+      //暂不支持转义字符,此法编码不对
+      //dest << Para[2];
+      //Len = Para[2].size();
+      QByteArray ba = Para[2].toLocal8Bit(); 
+      Len = ba.size();
+      for(int i = 0; i < Len; i++) dest << (quint8)ba[i];
     }
     else if(Para[1] == "U16"){
       if(bu64 == false) Len = -1; //变量值表达错误
@@ -155,21 +177,33 @@ bool  Dialog::Pro_CfgCompile(QTextStream &t) //返回true处理完成
     else if(Para[1] == "S8"){
       if(bs64 == false) Len = -1; //变量值表达错误
       else if((s64 < -128) || (s64 > 127)) Len = -2;//变量值超限
-      else{ dest << (qint8)u64; Len = 1; }
+      else{ dest << (qint8)s64; Len = 1; }
     }
     else if(Para[1] == "S16"){
       if(bs64 == false) Len = -1; //变量值表达错误
       else if((s64 < -32768) || (s64 > 32767)) Len = -2;//变量值超限
-      else{ dest << (qint16)u64; Len = 2; }
+      else{ dest << (qint16)s64; Len = 2; }
     }
     else if(Para[1] == "S32"){
       if(bs64 == false) Len = -1; //变量值表达错误
       else if((s64 < ((qint64)-21474836480 / 10)) || (s64 > (qint64)2147483647)) Len = -2;//变量值超限
-      else{ dest << (qint32)u64; Len = 4; }
+      else{ dest << (qint32)s64; Len = 4; }
     }
     else if(Para[1] == "S64"){
       if(bs64 == false) Len = -1; //变量值表达错误
-      else{ dest << (qint64)u64; Len = 8; }
+      else{ dest << (qint64)s64; Len = 8; }
+    }
+    else if(Para[1] == "FLOAT"){
+      bool bf;
+      float f =  Para[2].toFloat(&bf);
+      if(bf == false) Len = -1; //变量值表达错误
+      else{dest << f;  Len = 4;}
+    }
+    else if(Para[1] == "DOUBLE"){
+      bool bf;
+      double f =  Para[2].toDouble(&bf);
+      if(bf == false) Len = -1; //变量值表达错误
+      else{dest << f;  Len = 8;}
     }
     else if(Para[1] == "HEX8"){
       if(bh64 == false) Len = -1; //变量值表达错误
@@ -198,9 +232,9 @@ bool  Dialog::Pro_CfgCompile(QTextStream &t) //返回true处理完成
         quint32 u32 =  rgb.toInt(&bu32,16);
         if(bu32 == false) Len = -1; //变量值表达错误
         else{
-          dest << (quint8)0;  dest << ((quint8)(u32 >> 16) & 0xff);
-          dest << ((quint8)(u32 >> 8) & 0xff);
-          dest << ((quint8)u32 & 0xff);  Len = 4;
+          dest << (quint8)0;  dest << (quint8)((u32 >> 16) & 0xff);
+          dest << (quint8)((u32 >> 8) & 0xff);
+          dest << (quint8)(u32 & 0xff);  Len = 4;
         }
       }
     }
@@ -212,9 +246,9 @@ bool  Dialog::Pro_CfgCompile(QTextStream &t) //返回true处理完成
         quint32 u32 =  rgb.toInt(&bu32,16);
         if(bu32 == false) Len = -1; //变量值表达错误
         else{
-          dest << ((quint8)(u32 >> 16) & 0xff);
-          dest << ((quint8)(u32 >> 8) & 0xff);
-          dest << ((quint8)u32 & 0xff);  Len = 3;
+          dest << (quint8)((u32 >> 16) & 0xff);
+          dest << (quint8)((u32 >> 8) & 0xff);
+          dest << (quint8)(u32 & 0xff);  Len = 3;
         }
       }
     }
@@ -226,10 +260,10 @@ bool  Dialog::Pro_CfgCompile(QTextStream &t) //返回true处理完成
         quint32 u32 =  rgb.toInt(&bu32,16);
         if(bu32 == false) Len = -1; //变量值表达错误
         else{
-          dest << ((quint8)(u32 >> 24) & 0xff);
-          dest << ((quint8)(u32 >> 16) & 0xff);
-          dest << ((quint8)(u32 >> 8) & 0xff);
-          dest << ((quint8)u32 & 0xff);  Len = 4;
+          dest << (quint8)((u32 >> 24) & 0xff);
+          dest << (quint8)((u32 >> 16) & 0xff);
+          dest << (quint8)((u32 >> 8) & 0xff);
+          dest << (quint8)(u32 & 0xff);  Len = 4;
         }
       }
     }
@@ -242,26 +276,45 @@ bool  Dialog::Pro_CfgCompile(QTextStream &t) //返回true处理完成
         if(bu32 == false) Len = -1; //变量值表达错误
         else{
           quint8 u8 = (u32 >> (16 + 3)) & 0x1f;//R丢低3位
-          if(u32 & (1 << (16 + 2))) u8++;//颜色低位四舍五入
+          if((u8 < 0x1f) && (u32 & (1 << (16 + 2)))) u8++;//颜色低位四舍五入
           quint32 u16 = u8 << 11;
-          u8 = (u32 >> (8 + 2)) & 0x1f;//G丢低3位
-          if(u32 & (1 << (8 + 1))) u8++;//颜色低位四舍五入
+          u8 = (u32 >> (8 + 2)) & 0x3f;//G丢低2位
+          if((u8 < 0x3f) && (u32 & (1 << (8 + 1)))) u8++;//颜色低位四舍五入
           u16 |= u8 << 5;
           u8 = (u32 >> (0 + 3)) & 0x1f;//B丢低3位
-          if(u32 & (1 << (0 + 2))) u8++;//颜色低位四舍五入
+          if((u8 < 0x1f) && (u32 & (1 << (0 + 2)))) u8++;//颜色低位四舍五入
           u16 |= u8 << 0;
-          dest << ((quint8)(u16 >> 8) & 0xff);
-          dest << ((quint8)u16 & 0xff);  Len = 2;
+          dest << (quint8)((u16 >> 8) & 0xff);
+          dest << (quint8)(u16 & 0xff);  Len = 2;
         }
       }
     }
-
+    else if(Para[1] == "RGB2M666"){
+      if(Para[2][0] != '#') Len = -1; //变量值表达错误
+      else{
+        bool bu32;
+        QString rgb = Para[2].right(Para[2].size() - 1);
+        quint32 u32 =  rgb.toInt(&bu32,16);
+        if(bu32 == false) Len = -1; //变量值表达错误
+        else{
+          quint8 u8 = Scolor256To6((u32 >> 16) & 0xff);
+          quint8 rgb8 = u8 * 6 * 6;
+          u8 = Scolor256To6((u32 >> 8) & 0xff);
+          rgb8 += u8 * 6;
+          u8 = Scolor256To6((u32 >> 0) & 0xff);
+          rgb8 += u8 * 1;
+          dest << rgb8;  Len = 1;
+        }
+      }
+    }
+    else if(Para[1] == "NULL"){Len = 0; }//不填充
+    else Len = -10;  //不能识别的类型标识
 
     //数据有误
-    if(Len <= 0){
+    if(Len < 0){
 	    QMessageBox msgBox;
       QString note = QString::number(lineCount)  + tr("行：");
-      if(Len == 0) note +=  tr("类型标识不能被识别,注意全部为大写");
+      if(Len == -10) note +=  tr("类型标识不能被识别,注意全部为大写");
       if(Len == -1) note +=  tr("变量值表达错误");
       if(Len == -2) note +=  tr("变量值超限");
       note +=  tr(",编译中止!");
@@ -283,19 +336,34 @@ bool  Dialog::Pro_CfgCompile(QTextStream &t) //返回true处理完成
   QString fileName = QFileDialog::getSaveFileName(0, tr("保存成功生成的文件..."),QDir::currentPath(),tr("Bin格式(*.Bin)"));
   QFile::remove (fileName); //强制先删除
   if(!distFile.copy(fileName)){
-	QMessageBox finalmsgBox;
-	QString finalMsg = tr("未指定保存文件或加载处理异常!");
-	finalmsgBox.setText(finalMsg);
-	finalmsgBox.exec();
+	  QMessageBox finalmsgBox;
+	  QString finalMsg = tr("未指定保存文件或加载处理异常!");
+	  finalmsgBox.setText(finalMsg);
+	  finalmsgBox.exec();
 
     distFile.close();
     return false;
   }
 
 
+  //未禁止提示时，这里提示编译情况
+  if(IsDisFinal == false){
+    IsDisFinal = true;//返回后不需要提示了
+	  QMessageBox finalmsgBox;
+	  QString finalMsg = tr("编译成功完成!\n 共扫描 ") + QString::number(lineCount - 1)  + tr(" 行数据\n 有效数据 ") + 
+                          QString::number(ValidLine)  + tr(" 行！\n 生成 ") + QString::number(curPos) + tr(" 字节！") ;
+	  finalmsgBox.setText(finalMsg);
+	  finalmsgBox.exec();
+  }
+
+
   csvFile->close();
   delete csvFile;
   distFile.close();
+
+
+
+
   return true; //处理完成
 }
 

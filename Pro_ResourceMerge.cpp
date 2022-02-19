@@ -39,8 +39,8 @@ bool  Dialog::Pro_ResourceMerge(QTextStream &t) //返回true处理完成
   //第三行指定多字节时组合方式
   bool isMsb = true; //默认大端
   if(Para.count() >= 2){
-    bool curMsb = Para[1].toInt(&OK);
-    if(OK == true) isMsb = curMsb;
+    bool isLsb = Para[1].toInt(&OK);
+    if(OK == true) isMsb = !isLsb;//相反
   }
 
   //=======================================获取并缓存得路径位置========================================

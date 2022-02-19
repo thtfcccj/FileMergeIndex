@@ -70,10 +70,12 @@ private:
     QLabel *openFileNameLabel;
 	QLabel *directoryLabel;
  
-    unsigned char Fun;	
+  unsigned char Fun;	
+  bool IsDisFinal; //禁止提示完成
 
     //处理文件
     void Dialog::Pro(bool isIdent); //是否为识别
+    unsigned char Scolor256To6(unsigned char sColor);//单种色转换为6色
 
 	//处理程序:
     bool Pro_ResourceMerge(QTextStream &t);  //资源文件合并
