@@ -26,6 +26,7 @@ bool  Dialog::Pro_ResourceMerge(QTextStream &t) //返回true处理完成
   //第三行得到合并文件个数,决定数据头长度,后续指定的文件多出部分不合并，不够部分补0x00000000
   Line = t.readLine();
   Para = Line.split(';'); //;后为注释
+  Para = Para[0].split(','); //,分割多个参数
   //得到合并文件个数
   int binFileCount = Para[0].toInt();
   if((binFileCount <= 0) || (binFileCount > 1000)){
@@ -34,6 +35,14 @@ bool  Dialog::Pro_ResourceMerge(QTextStream &t) //返回true处理完成
     msgBox.exec();
     return false;
   }
+
+  //第三行指定多字节时组合方式
+  bool isMsb = true; //默认大端
+  if(Para.count() >= 2){
+    bool curMsb = Para[1].toInt(&OK);
+    if(OK == true) isMsb = curMsb;
+  }
+
   //=======================================获取并缓存得路径位置========================================
   //第四行起，为需合并文件绝对路径,以;空行结尾,先获得路径位置
   QStringList listPath;
@@ -69,6 +78,9 @@ bool  Dialog::Pro_ResourceMerge(QTextStream &t) //返回true处理完成
   //为空预留，有后续不满时，直接填充0x00000000
   unsigned long curPos = (binFileCount + 1) * 4 + Base;//用于检查文件容量超限情况
   QDataStream dest(&distFile);  //结果为数据流，需二进制处理
+  if(isMsb) dest.setByteOrder(QDataStream::BigEndian);//大端高位在前
+  else dest.setByteOrder(QDataStream::LittleEndian);//小端低位在前
+
   for(int Pos = 0; Pos < ValidCount; Pos++){
    //空文件预留
 	if(listPath[Pos][0] == ' '){

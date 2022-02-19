@@ -40,24 +40,24 @@ bool  Dialog::Pro_BinMerge(QTextStream &t) //返回true处理完成
   int ValidCount = 0;
   int binFileCount = 0;
   do{
-	Line = t.readLine();
-	Para = Line.split(';'); //;后为注释
+	  Line = t.readLine();
+	  Para = Line.split(';'); //;后为注释
     if(Para[0].isEmpty()) break; //结束了
 
-	unsigned long base, prvBase = 0;
+	  unsigned long base, prvBase = 0;
     QString Pos;
-	if(Para[0][0] == ' ') {
-		Pos = ' '; //空格表示中间预留
-        base = 0;
-	}
-	else{//有内容了
-        QStringList subPara = Para[0].split(','); //,分开
-		base = subPara[0].toLongLong(&OK,16);//提取基址
-		if(OK == false){
-			QMessageBox msgBox;
-			msgBox.setText(subPara[0] + tr("基址指定无效，应以“0xnnnnnnnn”方式表达!"));
-			msgBox.exec();
-			return false;
+	  if(Para[0][0] == ' ') {
+		  Pos = ' '; //空格表示中间预留
+      base = 0;
+	  }
+	  else{//有内容了
+      QStringList subPara = Para[0].split(','); //,分开
+		  base = subPara[0].toLongLong(&OK,16);//提取基址
+		  if(OK == false){
+		   	QMessageBox msgBox;
+			  msgBox.setText(subPara[0] + tr("基址指定无效，应以“0xnnnnnnnn”方式表达!"));
+			  msgBox.exec();
+			  return false;
 		 }
 		if(base < prvBase){
 			QMessageBox msgBox;
@@ -65,7 +65,7 @@ bool  Dialog::Pro_BinMerge(QTextStream &t) //返回true处理完成
 			msgBox.exec();
 			return false;
 		 }
-        prvBase = base;//更新上组
+     prvBase = base;//更新上组
 
 		Pos = directoryLabel->text() + '\\' + subPara[1]; //提取位置并组合成绝对目录
 		ValidCount++;
@@ -98,56 +98,56 @@ bool  Dialog::Pro_BinMerge(QTextStream &t) //返回true处理完成
   unsigned long curPos = 0;
   for(int Pos = 0; Pos < binFileCount; Pos++){
     //空文件跳过
-	if(listPath[Pos][0] == ' '){
-	  continue;
-	}
+	  if(listPath[Pos][0] == ' '){
+	    continue;
+	  }
     //当前位置至有效数据区没到填充位，填充空字符
     unsigned long curBase = baseAry[Pos]; //本次处理文件基址
-	if(curPos < curBase){
-		for( ;curPos < curBase; curPos++){
-		  dest << (quint8)nullData;
-		}
-	 }
-	else if(curBase < curPos){
-	  QMessageBox finalmsgBox;
-	  QString finalMsg = listPath[Pos] + tr(" 与下个有效文件目标空间有交集,\n可能本文件过大，或两个文件某个基址定义有误，合并已中止！");
-	  finalmsgBox.setText(finalMsg);
-	  finalmsgBox.exec();
+	  if(curPos < curBase){
+		  for( ;curPos < curBase; curPos++){
+		    dest << (quint8)nullData;
+		  }
+	   }
+	  else if(curBase < curPos){
+	    QMessageBox finalmsgBox;
+	    QString finalMsg = listPath[Pos] + tr(" 与下个有效文件目标空间有交集,\n可能本文件过大，或两个文件某个基址定义有误，合并已中止！");
+	    finalmsgBox.setText(finalMsg);
+	    finalmsgBox.exec();
 
-      distFile.close();
-      return false;
-	}
+        distFile.close();
+        return false;
+	  }
     //加载文件
     QFile *curFile = new QFile(listPath[Pos]);
     if(curFile->open(QIODevice::ReadOnly) == false){//文件打开失败
-	  QMessageBox finalmsgBox;
-	  QString finalMsg = listPath[Pos] + tr(" 未找到或打开失败,合并已中止！");
-	  finalmsgBox.setText(finalMsg);
-	  finalmsgBox.exec();
+	    QMessageBox finalmsgBox;
+	    QString finalMsg = listPath[Pos] + tr(" 未找到或打开失败,合并已中止！");
+	    finalmsgBox.setText(finalMsg);
+	    finalmsgBox.exec();
 
       delete curFile;
       distFile.close();
       return false;
     };
-	qint64 curSize = curFile->size();
+	  qint64 curSize = curFile->size();
     if(curSize > (qint64)(fileSize - curPos)){
-	  QMessageBox finalmsgBox;
-	  QString finalMsg = listPath[Pos] + tr(" 合并后的文件超过指定大小,注意检查目标文件大小是否设置正确，合并已中止！");
-	  finalmsgBox.setText(finalMsg);
-	  finalmsgBox.exec();
+	    QMessageBox finalmsgBox;
+	    QString finalMsg = listPath[Pos] + tr(" 合并后的文件超过指定大小,注意检查目标文件大小是否设置正确，合并已中止！");
+	    finalmsgBox.setText(finalMsg);
+	    finalmsgBox.exec();
 
       curFile->close();
       delete curFile;
       distFile.close();
       return false;
     }
-	//加载数据流
+	  //加载数据流
     QDataStream source(curFile);  //读数据流
     char *raw = new char[curSize];
-	source.readRawData(raw, curSize);
-	//合并入数据流
+	  source.readRawData(raw, curSize);
+	  //合并入数据流
     dest.writeRawData(raw ,curSize);//合并
-	//更新下个数据起始位置
+	  //更新下个数据起始位置
     curPos += curSize; 
     delete raw;
 
