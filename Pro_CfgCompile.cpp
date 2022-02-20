@@ -140,6 +140,7 @@ bool  Dialog::Pro_CfgCompile(QTextStream &t) //返回true处理完成
       return false;
 	  }
     //======================================数据区第二,三行编译========================================
+    if(Para[1] != "STRING") Para[2].remove(QRegExp("\\s"));//除字符表达式外，去除其所有空格
     //以最大方式预读
     bool bs64,bu64, bh64;
     qint64 s64 =  Para[2]. toLongLong (&bs64,10);
@@ -193,6 +194,15 @@ bool  Dialog::Pro_CfgCompile(QTextStream &t) //返回true处理完成
       if(bs64 == false) Len = -1; //变量值表达错误
       else{ dest << (qint64)s64; Len = 8; }
     }
+    else if(Para[1] == "BIN"){
+      bool bf;
+      quint32 b =  Para[2].toUInt(&bf, 2);
+      int len =  Para[2].size();
+      if(bf == false) Len = -1; //变量值表达错误
+      else if(len <=8){dest << (quint8)b;  Len = 1;}
+      else if(len <=16){dest << (quint16)b;  Len = 2;}
+      else {dest << (quint32)b;  Len = 4;}
+    }
     else if(Para[1] == "FLOAT"){
       bool bf;
       float f =  Para[2].toFloat(&bf);
@@ -231,11 +241,7 @@ bool  Dialog::Pro_CfgCompile(QTextStream &t) //返回true处理完成
         QString rgb = Para[2].right(Para[2].size() - 1);
         quint32 u32 =  rgb.toInt(&bu32,16);
         if(bu32 == false) Len = -1; //变量值表达错误
-        else{
-          dest << (quint8)0;  dest << (quint8)((u32 >> 16) & 0xff);
-          dest << (quint8)((u32 >> 8) & 0xff);
-          dest << (quint8)(u32 & 0xff);  Len = 4;
-        }
+        else{dest << (u32 & 0x00ffffff);  Len = 4;}
       }
     }
     else if(Para[1] == "RGB24"){
@@ -245,7 +251,7 @@ bool  Dialog::Pro_CfgCompile(QTextStream &t) //返回true处理完成
         QString rgb = Para[2].right(Para[2].size() - 1);
         quint32 u32 =  rgb.toInt(&bu32,16);
         if(bu32 == false) Len = -1; //变量值表达错误
-        else{
+        else{//数组RGB排列
           dest << (quint8)((u32 >> 16) & 0xff);
           dest << (quint8)((u32 >> 8) & 0xff);
           dest << (quint8)(u32 & 0xff);  Len = 3;
@@ -259,12 +265,7 @@ bool  Dialog::Pro_CfgCompile(QTextStream &t) //返回true处理完成
         QString rgb = Para[2].right(Para[2].size() - 1);
         quint32 u32 =  rgb.toInt(&bu32,16);
         if(bu32 == false) Len = -1; //变量值表达错误
-        else{
-          dest << (quint8)((u32 >> 24) & 0xff);
-          dest << (quint8)((u32 >> 16) & 0xff);
-          dest << (quint8)((u32 >> 8) & 0xff);
-          dest << (quint8)(u32 & 0xff);  Len = 4;
-        }
+        else{dest << u32;  Len = 4;}
       }
     }
     else if(Para[1] == "RGB2RGB565"){
@@ -277,15 +278,16 @@ bool  Dialog::Pro_CfgCompile(QTextStream &t) //返回true处理完成
         else{
           quint8 u8 = (u32 >> (16 + 3)) & 0x1f;//R丢低3位
           if((u8 < 0x1f) && (u32 & (1 << (16 + 2)))) u8++;//颜色低位四舍五入
-          quint32 u16 = u8 << 11;
+          quint16 u16 = u8 << 11;
           u8 = (u32 >> (8 + 2)) & 0x3f;//G丢低2位
           if((u8 < 0x3f) && (u32 & (1 << (8 + 1)))) u8++;//颜色低位四舍五入
           u16 |= u8 << 5;
           u8 = (u32 >> (0 + 3)) & 0x1f;//B丢低3位
           if((u8 < 0x1f) && (u32 & (1 << (0 + 2)))) u8++;//颜色低位四舍五入
           u16 |= u8 << 0;
-          dest << (quint8)((u16 >> 8) & 0xff);
-          dest << (quint8)(u16 & 0xff);  Len = 2;
+
+          dest << u16;
+          Len = 2;
         }
       }
     }
