@@ -1,0 +1,51 @@
+合并批处理功能执行脚本V1.00; //首行为功能描述识别符，以下所有行以“;”结尾
+ 1. 以">>"开始一个处理单元，故在首个>>前可注释！
+ 2. >>后跟需要的信息
+ 3. 需要的信息行，以：间隔
+ 4. 单行可使用//注解掉不要的部分
+
+>>cfgCompile：编译全部配置文件;                            //配置编译及提示，含下述三要素缺一不可
+  scriptFile: \配置功能编译说明及示例\CfgFunScript.txt;     //指定配置脚本位置
+  csvFile:    \配置功能编译说明及示例\uiGlobal.csv；        //需编译的文件
+  outFile:    \批处理资源文件\uiGlobal.Bin；                 //指定需输出的文件名
+  //以下为可继续执行示列：
+  //csvFile:    \配置功能编译说明及示例\dtGlobal.csv；        //需编译的文件2
+  //outFile:    \批处理资源文件\dtGlobal.Bin；               //指定需输出的文件名2
+  //scriptFile: \配置功能编译说明及示例2\CfgFunScript.txt;     //可重新指定配置脚本，编译下一个
+  //csvFile:    \配置功能编译说明及示例2\t1Global.csv；        //需编译的文件2
+  //outFile:    \批处理资源文件\t1Global.Bin；                //指定需输出的文件名2
+
+>>ePicCompile：转换相关图片;                               //图片格式转换
+  scriptFile: \ePic图片转换说明及示例\CfgFunScript.txt;     //指定配置脚本位置
+  picFile:    \ePic图片转换说明及示例\1.wbmp；              //需编译的图片文件
+  ePicFile:   \批处理资源文件\1.ePic；                     //指定需输出的图片文件名
+  //以下为可继续执行示列：
+  //picFile:    \ePic图片转换说明及示例\2.wbmp；            //需编译的图片文件
+  //ePicFile:   \批处理资源文件\2.ePic；                    //指定需输出的图片文件名
+  //scriptFile: \ePic图片转换说明及示例2\CfgFunScript.txt; //可重新指定配置脚本，编译下一个
+  //picFile:    \批处理资源文件\1.bmp；                    //需编译的图片文件
+  //ePicFile:   \批处理资源文件\21.ePic；                  //指定需输出的图片文件名
+
+>>ResourceMerge: 合并所有资源文件;                          //合并资源文件名
+  scriptFile: \批处理资源文件\MargeScript.txt;              //指定配置脚本位置，含需并的文件
+  InDir:      \批处理资源文件;                             //需合并的文件寻找目录，可继续指示路径
+  InDir:      \批处理资源文件;                             //需合并的文件寻找目录2
+  outFile:    \批处理资源文件\Marge1.Bin；                 //指定需输出的文件名
+  //以下为可继续执行示列：
+  //scriptFile: \批处理资源文件2\MargeScript.txt;         //指定配置脚本位置，含需并的文件
+  //InDir:      \批处理资源文件2;                         //需合并的文件寻找目录，可继续指示路径
+  //outFile:    \批处理资源文件2\Marge1.Bin；              //指定需输出的文件名
+
+>>ResourceMerge: 合并为最终文件;                           //合并资源文件名
+  scriptFile: \批处理最终文件\MargeScript.txt;             //指定配置脚本位置，含上述生成的文件，字库,程序等
+  InDir:      \批处理资源文件;                             //需合并的文件寻找目录，这里为上述批处理生成的文件目录
+  InDir:      \字库;                                      //需合并的文件寻找目录，这里假定为字库
+  InDir:      F:\program workspace\IAR\item1\out;         //需合并的文件寻找目录，这里假定为需合并的程序
+  outFile:    \批处理最终文件\Resource.Bin；               //指定需输出的文件名
+  //以下为可继续执行示列：
+  //scriptFile: \批处理最终文件2\MargeScript.txt;         //指定配置脚本位置，含需并的文件
+  //InDir:      \批处理资源文件2;                         //需合并的文件寻找目录
+  //outFile:    \批处理最终文件2\Resource.Bin；            //指定需输出的文件名
+
+
+
