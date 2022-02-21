@@ -74,10 +74,10 @@ QString  Dialog::Wbmp2epic(QDataStream &pic,
     if(HeaderMask & 0x40) dest << (quint8)0;//压缩方式：无压缩
     if(HeaderMask & 0x80) dest << (quint8)0;//无调色板
   }
-  //填充查找表(无)
+  //0x02,0x04: 填充查找表(无)
 
   //填充数据
-  if(FunMask & 0x04){//需要数据时
+  if(FunMask & 0x08){//需要数据时
     for(; DataPos < 6; DataPos++) dest << (quint8)raw[DataPos];//数据头余下部分
     picSize -= 6; //数据长度了
     char *rawData = new char[picSize];
@@ -165,11 +165,16 @@ QString  Dialog::Bmp2epic(QDataStream &pic,
     if(HeaderMask & 0x80) dest << (quint8)biClrUsed;//调色板个数
   }
 
-   Mask = FunMask & 0x06;
-   if(PaletteSize && Mask){//使用调色板时
-     //得到调色板数据
-     char *color = new char[PaletteSize];
+   //有时无条件提取调色板数据
+   char *color = NULL;
+   if(PaletteSize){//
+     color = new char[PaletteSize];
      pic.readRawData(color, PaletteSize); //读取原数据调色板
+   }
+
+   Mask = FunMask & 0x06;
+   if((color != NULL) && Mask){//使用调色板时
+     //得到调色板数据
      if((toColorType != 0) && (Mask == 0x06)){//转换为目标调色板
        for(unsigned short pos = 0; pos < PaletteSize; pos += 4){
          unsigned long ARGB = Lsb2Ul(&color[pos]);
@@ -192,7 +197,7 @@ QString  Dialog::Bmp2epic(QDataStream &pic,
    }//end if
 
   //填充数据
-  if(FunMask & 0x04){//需要数据时
+  if(FunMask & 0x08){//需要数据时
     picSize -= (PaletteSize + 54);
     if(picSize != biSizeImages)  return  QString(tr("图像数据大小域异常"));//需为4的倍数
     char *rawData = new char[picSize];
@@ -248,13 +253,17 @@ QString  Dialog::Gif2epic(QDataStream &pic,
     if(HeaderMask & 0x80) dest << (quint8)PaletteSize;//调色板个数(256时为0)
   }
 
+   //有时无条件提取调色板数据
+   char *color = NULL;
+   if((mcrspixel & 0x80)){//
+     PaletteSize *= 3;//RGB
+     color = new char[PaletteSize];
+     pic.readRawData(color, PaletteSize); //读取原数据调色板
+   }
+   else PaletteSize = 0;//无全局调色板
   //填充调色板
    unsigned char Mask = FunMask & 0x06;
-   if((mcrspixel & 0x80) && Mask){//使用全局调色板时
-     //得到调色板数据,调色板按RGB顺序排列
-     PaletteSize *= 3;//RGB
-     char *color = new char[PaletteSize];
-     pic.readRawData(color, PaletteSize); //读取原数据调色板
+   if((color != NULL) && Mask){//使用全局调色板时
      if((toColorType != 0) && (Mask == 0x06)){//转换为目标调色板
        for(unsigned short pos = 0; pos < PaletteSize; pos += 3){
          if(toColorType == 1){ //数组RGB排列,直接对应
@@ -277,7 +286,7 @@ QString  Dialog::Gif2epic(QDataStream &pic,
      else dest.writeRawData(color ,PaletteSize);//使用数据调色板
      delete color;
    }//end if
-   else PaletteSize = 0;//无全局调色板
+
 
   //紧跟着应该是图形控制扩展(Graphic Control Extension)，0x21,0xf0,0x04开头，0x04表示跟4个数据，0结尾即共8个数:
   //0x21: 扩展块标志
@@ -289,7 +298,7 @@ QString  Dialog::Gif2epic(QDataStream &pic,
   //gif文件以固定值0x3B结束
 
   //填充数据
-  if(FunMask & 0x04){//需要数据时
+  if(FunMask & 0x08){//需要数据时
     PaletteSize += (6+7); //含头了
     if(picSize <= PaletteSize)  return  QString(tr("图像数据大小域异常"));
     picSize -= PaletteSize;
@@ -390,9 +399,9 @@ bool  Dialog::Pro_ePicTrans(QTextStream &t) //返回true处理完成
   QString Resume;
   if(PicType == "wbm")
     Resume = Wbmp2epic(pic,dest, picFile->size(), FunMask,HeaderMask);
-  if(PicType == "bmp")
+  else if(PicType == "bmp")
     Resume = Bmp2epic(pic,dest, picFile->size(), FunMask,HeaderMask,toColorType);
-  if(PicType == "gif")
+  else if(PicType == "gif")
     Resume = Gif2epic(pic,dest, picFile->size(), FunMask,HeaderMask,toColorType);
   else Resume = QString( tr("图像类型异常"));
 
