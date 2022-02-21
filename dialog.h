@@ -75,7 +75,11 @@ private:
 
     //处理文件
     void Dialog::Pro(bool isIdent); //是否为识别
+    //色系转换
+
+    unsigned short toRGB565(unsigned long u32);//标准色转RGB565,四舍五入
     unsigned char Scolor256To6(unsigned char sColor);//单种色转换为6色
+    unsigned char toRGBM666(unsigned long u32);//标准色转RGBM666,四舍五入
 
 	//处理程序:
     bool Pro_ResourceMerge(QTextStream &t);  //资源文件合并
@@ -86,12 +90,18 @@ private:
     //图像转换：
     bool Pro_ePicTrans(QTextStream &t);  
    //wbmp格式转ePic, 返回空格符转换正确，否则描述错识位置
-   const QString  Wbmp2epicHeader(QDataStream &pic,
+   QString  Wbmp2epic(QDataStream &pic,
                                       QDataStream &dest,
                                       qint64 picSize,
                                       unsigned char FunMask,
                                       unsigned char HeaderMask);
-
+   //wbmp格式转ePic, 返回空格符转换正确，否则描述错识位置
+    QString  Bmp2epic(QDataStream &pic,
+                                      QDataStream &dest,
+                                      qint64 picSize,
+                                      unsigned char FunMask,
+                                      unsigned char HeaderMask,
+                                      unsigned char toColorType);
 
 };
 

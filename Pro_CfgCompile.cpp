@@ -7,6 +7,20 @@
 
 #include "dialog.h"
 
+//标准色转RGB565,四舍五入
+unsigned short Dialog::toRGB565(unsigned long ARGB)
+{
+  quint8 u8 = (ARGB >> (16 + 3)) & 0x1f;//R丢低3位
+  if((u8 < 0x1f) && (ARGB & (1 << (16 + 2)))) u8++;//颜色低位四舍五入
+  quint16 u16 = u8 << 11;
+  u8 = (ARGB >> (8 + 2)) & 0x3f;//G丢低2位
+  if((u8 < 0x3f) && (ARGB & (1 << (8 + 1)))) u8++;//颜色低位四舍五入
+  u16 |= u8 << 5;
+  u8 = (ARGB >> (0 + 3)) & 0x1f;//B丢低3位
+  if((u8 < 0x1f) && (ARGB & (1 << (0 + 2)))) u8++;//颜色低位四舍五入
+  u16 |= u8 << 0;
+  return u16;
+}
 
 
 //单种色转换为6色,四舍五入
@@ -18,6 +32,18 @@ unsigned char Dialog::Scolor256To6(unsigned char sColor)
   if(sColor < (0x99 + 25)) return 3;  
   if(sColor < (0xCC + 25)) return 4;
   return 5;
+}
+
+unsigned char Dialog::toRGBM666(unsigned long ARGB)//标准色转RGBM666,四舍五入
+{
+  quint8 u8 = Scolor256To6((ARGB >> 16) & 0xff);
+  quint8 rgb8 = u8 * 6 * 6;
+  u8 = Scolor256To6((ARGB >> 8) & 0xff);
+  rgb8 += u8 * 6;
+  u8 = Scolor256To6((ARGB >> 0) & 0xff);
+  rgb8 += u8 * 1;
+
+  return rgb8;
 }
 
 
@@ -275,20 +301,7 @@ bool  Dialog::Pro_CfgCompile(QTextStream &t) //返回true处理完成
         QString rgb = Para[2].right(Para[2].size() - 1);
         quint32 u32 =  rgb.toInt(&bu32,16);
         if(bu32 == false) Len = -1; //变量值表达错误
-        else{
-          quint8 u8 = (u32 >> (16 + 3)) & 0x1f;//R丢低3位
-          if((u8 < 0x1f) && (u32 & (1 << (16 + 2)))) u8++;//颜色低位四舍五入
-          quint16 u16 = u8 << 11;
-          u8 = (u32 >> (8 + 2)) & 0x3f;//G丢低2位
-          if((u8 < 0x3f) && (u32 & (1 << (8 + 1)))) u8++;//颜色低位四舍五入
-          u16 |= u8 << 5;
-          u8 = (u32 >> (0 + 3)) & 0x1f;//B丢低3位
-          if((u8 < 0x1f) && (u32 & (1 << (0 + 2)))) u8++;//颜色低位四舍五入
-          u16 |= u8 << 0;
-
-          dest << u16;
-          Len = 2;
-        }
+        else{dest << (quint16)toRGB565(u32);  Len = 2;}
       }
     }
     else if(Para[1] == "RGB2M666"){
@@ -298,15 +311,7 @@ bool  Dialog::Pro_CfgCompile(QTextStream &t) //返回true处理完成
         QString rgb = Para[2].right(Para[2].size() - 1);
         quint32 u32 =  rgb.toInt(&bu32,16);
         if(bu32 == false) Len = -1; //变量值表达错误
-        else{
-          quint8 u8 = Scolor256To6((u32 >> 16) & 0xff);
-          quint8 rgb8 = u8 * 6 * 6;
-          u8 = Scolor256To6((u32 >> 8) & 0xff);
-          rgb8 += u8 * 6;
-          u8 = Scolor256To6((u32 >> 0) & 0xff);
-          rgb8 += u8 * 1;
-          dest << rgb8;  Len = 1;
-        }
+        else{dest << (quint16)toRGBM666(u32);  Len = 1;}
       }
     }
     else if(Para[1] == "NULL"){Len = 0; }//不填充

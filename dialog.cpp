@@ -128,7 +128,7 @@ void Dialog::setOpenFileName()
 		 QString fileName = QFileDialog::getOpenFileName(this,
 									tr("支持的图像文件..."),
 									openFileNameLabel->text(),
-									tr("wbmp Files (*.wbm);;bmp Files (*.bmp);;gif Files (*.gif)"),
+									tr("支持的图片 (*.wbm;*.bmp;*.gif);;wbmp Files (*.wbm);;bmp Files (*.bmp);;gif Files (*.gif)"),
 									&selectedFilter,
 									options);
 		 if (!fileName.isEmpty())
