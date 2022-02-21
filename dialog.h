@@ -81,6 +81,18 @@ private:
     bool Pro_ResourceMerge(QTextStream &t);  //资源文件合并
     bool Pro_BinMerge(QTextStream &t);       //bin文件合并
     bool Pro_CfgCompile(QTextStream &t);     //配置文件编译
+
+
+    //图像转换：
+    bool Pro_ePicTrans(QTextStream &t);  
+   //wbmp格式转ePic, 返回空格符转换正确，否则描述错识位置
+   const QString  Wbmp2epicHeader(QDataStream &pic,
+                                      QDataStream &dest,
+                                      qint64 picSize,
+                                      unsigned char FunMask,
+                                      unsigned char HeaderMask);
+
+
 };
 
 #endif

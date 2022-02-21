@@ -202,14 +202,10 @@
 	</References>
 	<Files>
 		<Filter
-			Name="Source Files"
+			Name="Pro Files"
 			Filter="cpp;c;cxx;def;odl;idl;hpj;bat;asm;asmx"
 			UniqueIdentifier="{4FC737F1-C7A5-4376-A066-2A32D752A2FF}"
 			>
-			<File
-				RelativePath="main.cpp"
-				>
-			</File>
 			<File
 				RelativePath=".\Pro_BinMerge.cpp"
 				>
@@ -219,12 +215,16 @@
 				>
 			</File>
 			<File
+				RelativePath=".\Pro_ePicTrans.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\Pro_ResourceMerge.cpp"
 				>
 			</File>
 		</Filter>
 		<Filter
-			Name="Header Files"
+			Name="Global Files"
 			Filter="h;hpp;hxx;hm;inl;inc;xsd"
 			UniqueIdentifier="{93995380-89BD-4b04-88EB-625FBE52EBFB}"
 			>
@@ -258,6 +258,10 @@
 					/>
 				</FileConfiguration>
 			</File>
+			<File
+				RelativePath="main.cpp"
+				>
+			</File>
 		</Filter>
 		<Filter
 			Name="Generated Files"
@@ -265,10 +269,10 @@
 			UniqueIdentifier="{71ED8ED8-ACB9-4CE9-BBE1-E00B30144E11}"
 			>
 			<File
-				RelativePath="tmp\moc\debug_shared\moc_dialog.cpp"
+				RelativePath="tmp\moc\release_shared\moc_dialog.cpp"
 				>
 				<FileConfiguration
-					Name="Release|Win32"
+					Name="Debug|Win32"
 					ExcludedFromBuild="true"
 					>
 					<Tool
@@ -277,10 +281,10 @@
 				</FileConfiguration>
 			</File>
 			<File
-				RelativePath="tmp\moc\release_shared\moc_dialog.cpp"
+				RelativePath="tmp\moc\debug_shared\moc_dialog.cpp"
 				>
 				<FileConfiguration
-					Name="Debug|Win32"
+					Name="Release|Win32"
 					ExcludedFromBuild="true"
 					>
 					<Tool

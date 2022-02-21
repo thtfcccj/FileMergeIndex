@@ -111,17 +111,31 @@ void Dialog::setOpenFileName()
  void Dialog::setExistingDirectory()
  {
 	 if(Fun == 3){//打开编译文件
-		QFileDialog::Options options;
-		QString selectedFilter;
-		QString fileName = QFileDialog::getOpenFileName(this,
+		 QFileDialog::Options options;
+		 QString selectedFilter;
+		 QString fileName = QFileDialog::getOpenFileName(this,
 									tr("需编译的csv格式文件..."),
 									openFileNameLabel->text(),
 									tr("Text Files (*.csv)"),
 									&selectedFilter,
 									options);
-		if (!fileName.isEmpty())
-			directoryLabel->setText(fileName);
+		 if (!fileName.isEmpty())
+		  	directoryLabel->setText(fileName);
 	 }
+	 if(Fun == 4){//打开支持的图像文件
+		 QFileDialog::Options options;
+		 QString selectedFilter;
+		 QString fileName = QFileDialog::getOpenFileName(this,
+									tr("支持的图像文件..."),
+									openFileNameLabel->text(),
+									tr("wbmp Files (*.wbm);;bmp Files (*.bmp);;gif Files (*.gif)"),
+									&selectedFilter,
+									options);
+		 if (!fileName.isEmpty())
+		  	directoryLabel->setText(fileName);
+	 }
+
+
 	 else{//打开目录
 		 QFileDialog::Options options = QFileDialog::DontResolveSymlinks | QFileDialog::ShowDirsOnly;
 		 QString directory = QFileDialog::getExistingDirectory(this,
@@ -164,32 +178,39 @@ void Dialog::Pro(bool isIdent)//是否为识别
   IsDisFinal = false;//默认允许提示
   if((Para[0] == tr("ccj文件合并描述脚本V1.00")) || //资源合并器 原描述兼容
      (Para[0] == tr("ccj资源文件合并脚本V1.00"))){  //新描述
-    if(Fun != 1){//脚本切换时
-      Fun = 1;
-      directoryLabel->setText("");
-	  directoryButton->setText(tr("打开待合并文件所在目录..."));
-	}
-    if(isIdent == false) Resume = Pro_ResourceMerge(t); 
+     if(Fun != 1){//脚本切换时
+       Fun = 1;
+       directoryLabel->setText("");
+	     directoryButton->setText(tr("打开待合并文件所在目录..."));
+	   }
+     if(isIdent == false) Resume = Pro_ResourceMerge(t); 
   }
 
   else if(Para[0] == tr("ccj bin文件合并描述脚本V1.00")){//
     if(Fun != 2){//脚本切换时
       Fun = 2;
       directoryLabel->setText("");
-	  directoryButton->setText(tr("打开待合并文件所在目录..."));
-	}
-     if(isIdent == false) Resume = Pro_BinMerge(t); //bin文件合并器
+	    directoryButton->setText(tr("打开待合并文件所在目录..."));
+	  }
+    if(isIdent == false) Resume = Pro_BinMerge(t); //bin文件合并器
   }
 
   else if(Para[0] == tr("ccj 配置编译选项V1.00")){//
     if(Fun != 3){//脚本切换时
       Fun = 3;
       directoryLabel->setText("");
-	  directoryButton->setText(tr("打开需编译的csv格式文件..."));
-	}
-     if(isIdent == false) Resume = Pro_CfgCompile(t); //bin文件合并器
+	    directoryButton->setText(tr("打开需编译的csv格式文件..."));
+	  }
+    if(isIdent == false) Resume = Pro_CfgCompile(t); //bin文件合并器
   }
-
+  else if(Para[0] == tr("ccj ePic图片转换配置V1.00")){//
+    if(Fun != 4){//脚本切换时
+      Fun = 4;
+      directoryLabel->setText("");
+	    directoryButton->setText(tr("打开需转换的图像..."));
+	  }
+    if(isIdent == false) Resume = Pro_ePicTrans(t); 
+  }
   else{
     QMessageBox msgBox;
     msgBox.setText(tr("首行文件描述不能识别，请加载正确的脚本文件!"));
