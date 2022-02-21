@@ -89,7 +89,7 @@ Dialog::Dialog(QWidget *parent)
 
     setLayout(layout);
 
-    setWindowTitle(tr("CCJ多功能文件合并编译器 V1.10       thtfcccj倾情制作"));
+    setWindowTitle(tr("CCJ多功能文件处理编译器 V1.10       thtfcccj倾情制作"));
 }
 
 void Dialog::setOpenFileName()
@@ -128,7 +128,7 @@ void Dialog::setOpenFileName()
 		 QString fileName = QFileDialog::getOpenFileName(this,
 									tr("支持的图像文件..."),
 									openFileNameLabel->text(),
-									tr("支持的图片 (*.wbm;*.bmp;*.gif);;wbmp Files (*.wbm);;bmp Files (*.bmp);;gif Files (*.gif)"),
+									tr("支持的图片 (*.png;*.wbm;*.bmp;*.gif);;png Files (*.png);;wbmp Files (*.wbm);;bmp Files (*.bmp);;gif Files (*.gif)"),
 									&selectedFilter,
 									options);
 		 if (!fileName.isEmpty())

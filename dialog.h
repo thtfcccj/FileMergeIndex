@@ -89,6 +89,11 @@ private:
 
     //图像转换：
     bool Pro_ePicTrans(QTextStream &t);  
+
+   unsigned long Dialog::Lsb2Ul(const char *raw);
+   unsigned short Lsb2Us(const char *raw);
+
+
    //wbmp格式转ePic, 返回空格符转换正确，否则描述错识位置
    QString  Wbmp2epic(QDataStream &pic,
                                       QDataStream &dest,
@@ -109,7 +114,13 @@ private:
                                       unsigned char FunMask,
                                       unsigned char HeaderMask,
                                       unsigned char toColorType);
-
+   //Png格式转ePic, 返回空格符转换正确，否则描述错识位置
+    QString  Png2epic(QDataStream &pic,
+                                      QDataStream &dest,
+                                      qint64 picSize,
+                                      unsigned char FunMask,
+                                      unsigned char HeaderMask,
+                                      unsigned char toColorType);
 };
 
 #endif
