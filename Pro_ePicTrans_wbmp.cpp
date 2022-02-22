@@ -17,6 +17,7 @@ QString  Dialog::Wbmp2epic(QDataStream &pic,
 {
   //缓冲并处理数据头
   char *raw = new char[6];
+  laterDelRaw = raw;
   pic.readRawData(raw, 6);
   if(raw[0] != 0) return  QString(tr("图像标识0错误"));
   else if(raw[1] != 0) return  QString(tr("图像标识1错误"));
@@ -63,7 +64,8 @@ QString  Dialog::Wbmp2epic(QDataStream &pic,
     char *rawData = new char[picSize];
     pic.readRawData(rawData, picSize);
     dest.writeRawData(rawData ,picSize);//合并
+    delete rawData;
   }
-  delete raw;
+  delete raw; laterDelRaw = NULL;
   return QString();//空
 }

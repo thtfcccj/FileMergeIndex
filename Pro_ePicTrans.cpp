@@ -22,10 +22,43 @@ unsigned long Dialog::Lsb2Ul(const char *raw)
 unsigned short Dialog::Lsb2Us(const char *raw)
 {
   const unsigned char *data = (const unsigned char *)raw;
-  unsigned long us = *data++;
-  us |= (unsigned long)*data << 8;
+  unsigned short us = *data++;
+  us |= (unsigned short)*data << 8;
   return us;
 }
+
+unsigned long Dialog::Msb2Ul(const char *raw)
+{
+  const unsigned char *data = (const unsigned char *)raw;
+  unsigned long ul = (unsigned long)*data << 24;
+  data++;
+  ul |= (unsigned long)*data << 16;
+  data++;
+  ul |= (unsigned long)*data << 8;
+  data++;
+  ul |= (unsigned long)*data << 0;
+  return ul;
+}
+unsigned short Dialog::Msb2Us(const char *raw)
+{
+  const unsigned char *data = (const unsigned char *)raw;
+  unsigned short us = (unsigned short)*data << 8;
+  data++;
+  us |= (unsigned short)*data << 0;
+  return us;
+}
+
+unsigned long Dialog::RGB24toUl(const char *raw)//RGB数组转换
+{
+  const unsigned char *data = (const unsigned char *)raw;
+  unsigned long ul = (unsigned long)*data << 16;
+  data++;
+  ul |= (unsigned long)*data << 8;
+  data++;
+  ul |= (unsigned long)*data << 0;
+  return ul;
+}
+
 
 bool  Dialog::Pro_ePicTrans(QTextStream &t) //返回true处理完成
 {
@@ -76,7 +109,14 @@ bool  Dialog::Pro_ePicTrans(QTextStream &t) //返回true处理完成
       return false;
      }
   }
-
+  //第6行PNG时数据块掩码
+  PngDataMask = 0xFFEF1FDC; //默认删除PNG头，识别块，调色板，时间，相关文本等信息,无结束块。
+  Line = t.readLine();
+  if(t.status() == QTextStream::Ok){
+    Para = Line.split(';'); //;后为注释
+    unsigned long Mask = Para[0].toUInt(&OK, 16);
+    if(OK == true) PngDataMask = Mask;
+  }
  //======================================加载支持的图像文件=======================================
   QFile *picFile = new QFile(directoryLabel->text());
   if(picFile->open(QIODevice::ReadOnly) == false){//文件打开失败
@@ -111,6 +151,7 @@ bool  Dialog::Pro_ePicTrans(QTextStream &t) //返回true处理完成
 
   //======================================图像处理========================================
   QDataStream pic(picFile);  //图片数据流，需二进制处理
+  laterDelRaw = NULL; //初始化
   QString Resume;
   if(PicType == "wbm")
     Resume = Wbmp2epic(pic,dest, picFile->size(), FunMask,HeaderMask);
@@ -122,6 +163,7 @@ bool  Dialog::Pro_ePicTrans(QTextStream &t) //返回true处理完成
     Resume = Png2epic(pic,dest, picFile->size(), FunMask,HeaderMask,toColorType);
   else Resume = QString( tr("图像类型异常"));
 
+  if(laterDelRaw != NULL) delete laterDelRaw;//稍后删除
   //数据有误
   if(!Resume.isEmpty()){
 	    QMessageBox msgBox;

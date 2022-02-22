@@ -19,6 +19,7 @@ QString  Dialog::Bmp2epic(QDataStream &pic,
 {
   //处理bmp文件头,一共14字节
   char *raw = new char[54];
+  laterDelRaw = raw;
   pic.readRawData(raw, 54);
   if((raw[0] != 'B') && (raw[0] != 'b')) return  QString(tr("图像标识域0错误"));
   if((raw[1] != 'M') && (raw[1] != 'm')) return  QString(tr("图像标识域1错误"));
@@ -51,7 +52,7 @@ QString  Dialog::Bmp2epic(QDataStream &pic,
   Data = Lsb2Ul(&raw[14 + 32]);//说明位图使用的调色板中的颜色索引数，为0说明使用所有；
   if(Data > 257) return  QString(tr("调色板数量域异常"));//允许1种透明色
   unsigned short biClrUsed = Data;
-  delete raw;
+  delete raw; laterDelRaw = NULL;
 
    //得到调色板空间大小
    unsigned char Mask = FunMask & 0x60;
@@ -89,6 +90,7 @@ QString  Dialog::Bmp2epic(QDataStream &pic,
    if(PaletteSize){//
      color = new char[PaletteSize];
      pic.readRawData(color, PaletteSize); //读取原数据调色板
+     laterDelRaw = color;
    }
 
    Mask = FunMask & 0x06;
@@ -112,16 +114,19 @@ QString  Dialog::Bmp2epic(QDataStream &pic,
        }//end for
      }//endif
      else dest.writeRawData(color ,PaletteSize);//使用数据调色板
-     delete color;
+
    }//end if
+   if(color != NULL) {delete color;   laterDelRaw = NULL;}
 
   //填充数据
   if(FunMask & 0x08){//需要数据时
     picSize -= (PaletteSize + 54);
     if(picSize != biSizeImages)  return  QString(tr("图像数据大小域异常"));//需为4的倍数
+
     char *rawData = new char[picSize];
     pic.readRawData(rawData, picSize);
     dest.writeRawData(rawData ,picSize);//合并
+    delete rawData;
   }
   
   return QString();//空

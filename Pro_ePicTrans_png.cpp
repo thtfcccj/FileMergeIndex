@@ -7,8 +7,7 @@
 
 #include "dialog.h"
 
-//---------------------------------git格式转ePic----------------------------------------------
-
+//---------------------------------png格式转ePic----------------------------------------------
 //返回空格符转换正确，否则描述错识位置
 QString  Dialog::Png2epic(QDataStream &pic,
                                       QDataStream &dest,
@@ -17,29 +16,109 @@ QString  Dialog::Png2epic(QDataStream &pic,
                                       unsigned char HeaderMask,
                                       unsigned char toColorType)
 {
-  //处理bmp文件头,一共13字节
-  char *raw = new char[6+7];
-  pic.readRawData(raw, 6+7);
-  if((raw[0] != 'G') || (raw[1] != 'I') || (raw[2] != 'F') || (raw[3] != '8') /*|| (raw[4] != '9')*/ || (raw[5] != 'a'))
-    return  QString(tr("图像标识域错误, 仅支持GIF87a 或 GIF89a 格式"));
+  //PNG Signature（PNG签名块，包含PNG类型的标识） + 紧跟的文件头数据块IHDR(header chunk，13个字节)
+  //数据块由4Byte数据区长度n+4Byte定义好的数据块标识+数据区n个+4ByteCRC校验组成
+  
+  //缓冲整个图像以方便扫描查找调色板
+  char *raw = new char[picSize]; 
+  laterDelRaw = raw;
+  pic.readRawData(raw, picSize);
 
+  //图像标识域（首位判断出错注解掉了）
+  if(/*(raw[0] != 0x89) || */(raw[1] != 'P') || (raw[2] != 'N') || (raw[3] != 'G') || (raw[4] !=  0x0d) || (raw[5] != 0x0a) || (raw[6] != 0x1a) || (raw[7] != 0x0a))
+    return  QString(tr("图像标识域错误"));
 
-  //处理逻辑屏幕标识符(Logical Screen Descriptor) 由7个字节组成
-  unsigned char biWidth = Lsb2Us(&raw[6 + 0]);
-  unsigned char biHeight = Lsb2Us(&raw[6 + 2]);
-  quint8 mcrspixel = Lsb2Us(&raw[6 + 4]);//m(b7有全局调色板)cr(b6~b4,颜色深度-1)s(b3) pixel(b3~0全局调色板个数-1)域
-  quint8 bgColor = Lsb2Us(&raw[6 + 5]);//背景颜色(在全局颜色列表中的索引，如果没有全局颜色列表，该值没有意义)
+  //==========================数据块IHDR(header chunk，13个字节)，含分辨率、比特深度、色彩模式、压缩方法
+  if((raw[12] != 'I') || (raw[13] != 'H') || (raw[14] != 'D') || (raw[15] !=  'R'))
+    return  QString(tr("未找到IHDR标识"));
+  unsigned long Data = Msb2Ul(&raw[8]);
+  if(Data != 13) return  QString(tr("IHDR长度域错误"));
+  Data = Msb2Ul(&raw[16]);
+  if(Data >= 16384) return  QString(tr("不支持宽超16384像素的图像"));
+  quint16 biWidth = Data;
+  Data = Msb2Ul(&raw[20]);
+  if(Data >= 16384) return  QString(tr("不支持高超16384像素的图像"));
+  quint16 biHeight = Data;
+  quint8 colorDeep = raw[24];
+  if((colorDeep != 1) && (colorDeep != 2) && (colorDeep != 4) && (colorDeep != 8) && (colorDeep != 16))
+    return  QString(tr("颜色深度域表达异常"));
+  quint8 colorType = raw[25];
+  if(colorType > 6) return  QString(tr("颜色类型域表达异常"));
+  quint8 Compression = raw[26]; //压缩方法，0为默认
+  quint8 Filter = raw[27];//滤波器方法，0为5种滤波器中默认自适应
+  quint8 Scan = raw[28];//扫描方法，0为5种滤波器中默认自适应
 
-  //全局颜色列表空间大小
-  unsigned short colorDeep =   (unsigned short)1 << (((mcrspixel >> 4) & 0x07) + 1);//色深
-  unsigned short PaletteSize = (unsigned short)1 << (((mcrspixel >> 0) & 0x07) + 1); //调色板个数
-  if(PaletteSize > colorDeep) return  QString(tr("mcrspixel内调色板数量异常"));//允许1种透明色
+ //=======================扫描整个数据，以获取相关信息
+ //准备MAP
+  QMap<QString, int> mapHeader; //由数据头找到类型,b7:在PLTE和IDAT之前,b6在IDAT之前,b5:不可去除数据块， 低5bit对应使用掩码
+  //已处理mapHeader[" PNG"] = 0xc8 |0;//PNG头(ePic默认去除)
+  //已处理mapHeader["IHDR"] = 0xc8 |1;//文件头数据块(ePic默认去除)
+  mapHeader["cHRM"] = 0xe0 |2;//基色和白色点数据块	
+  mapHeader["gAMA"] = 0xc0 |3;//图像γ数据块
+  mapHeader["sBIT"] = 0xc0 |4;//样本有效位数据块
+  mapHeader["PLTE"] = 0x60 |5;//调色板数据块(ePic默认去除)
+  mapHeader["bKGD"] = 0xc0 |6;//背景颜色数据块
+  mapHeader["hIST"] = 0xc0 |7;//图像直方图数据块
+  mapHeader["tRNS"] = 0xc0 |8;//图像透明数据块
+  mapHeader["oFFs"] = 0x40 |9;//(专用公共数据块)
+  mapHeader["pHYs"] = 0x40 |10;//物理像素尺寸数据块
+  mapHeader["sCAL"] = 0x40 |11;//(专用公共数据块)
+  mapHeader["IDAT"] = 0x20 |12;//图像数据块
+  mapHeader["tIME"] = 0x00 |13;//图像最后修改时间数据块(ePic默认去除)
+  mapHeader["tEXt"] = 0x00 |14;//文本信息数据块(ePic默认去除)
+  mapHeader["zTXt"] = 0x00 |15;//压缩文本数据块(ePic默认去除)
+  mapHeader["fRAc"] = 0x00 |16;//(专用公共数据块)
+  mapHeader["gIFg"] = 0x00 |17;//(专用公共数据块)
+  mapHeader["gIFt"] = 0x00 |18;//(专用公共数据块)
+  mapHeader["gIFx"] = 0x00 |19;//(专用公共数据块)
+  mapHeader["IEND"] = 0x00 |20;//最后一个数据块(ePic默认去除)
 
+  //开始查找最后图像数据块位置个数，查找表位置
+  qint64 RdPos = 33;//从长度域开始
+  unsigned long RdSize = 0; 
+  unsigned char headerType = 0;
+  unsigned long FulledMask = 0;
+  qint64 pltePos = 0;
+  qint64 idatPos = 0;
+  int idatCount = 0;//出现IDAT总数
+  do{
+    RdSize = Msb2Ul(&raw[RdPos]) + 4 * 3; //含长度4，标识域4+ 本次数据+校验码4
+    QString Header(raw[RdPos + 4]); Header.append(raw[RdPos + 5]); Header.append(raw[RdPos + 6]); Header.append(raw[RdPos + 7]);
+    headerType = mapHeader[Header] & 0x1f;
+    unsigned long Mask = (unsigned long)1 << headerType;
+    if(headerType > 0){//有值时
+      if(headerType == 12){//图像数据块
+        idatCount++; 
+        idatPos = RdPos;
+      }
+      else{
+        if(headerType == 5) pltePos = RdPos; //有调色板了
+        if(Mask & PngDataMask) FulledMask |= Mask;//允许填充时
+      }
+    }
+    RdPos += RdSize; //下次位置
+    if(headerType == 20) break;//最后一个数据块了。
+  }while(RdPos < picSize);
+  if(headerType != 20) return  QString(tr("无效的文件结束符"));
 
-  //填充数据头
+  //获取标志
+  bool isOnlyData;
+  if((FunMask & 0x20) && (FulledMask == 0) && (idatCount == 1))//仅有结束与1个IDAT时，查找表后为纯IDAT数据
+    isOnlyData = true;
+  else isOnlyData = false;
+
+  //=======================需要时查找调色板
+  quint16 PaletteCount; //调色板数
+  if((FunMask & 0x02) && (colorType == 3)){
+    if(pltePos == 0) return  QString(tr("未找到调色板"));
+    PaletteCount = Msb2Ul(&raw[pltePos]) / 3;//RGB24
+  }
+  else PaletteCount = 0; //无调色板
+
+  //====================填充数据头
   if(FunMask & 0x01){//需要数据头时
-    if(HeaderMask & 0x01) dest << (quint8)'g';//g前缀
-    if(HeaderMask & 0x02) dest << (quint8)mcrspixel; //色深查找表等信息
+    if(HeaderMask & 0x01) dest << (quint8)'n';//g前缀
+    if(HeaderMask & 0x02) dest << (quint8)(((colorType & 0x07) << 5) | colorDeep); //颜色类型b5~7与色深信息b4~0
 
     unsigned char Mask = HeaderMask & 0x0c;
     if(Mask == 0x0c) dest << (quint16)biWidth;   //双字节宽度
@@ -48,63 +127,56 @@ QString  Dialog::Png2epic(QDataStream &pic,
     Mask = HeaderMask & 0x30;
     if(Mask == 0x30) dest << (quint16)biHeight;   //双字节高度
     else if(Mask) dest << (quint8)biHeight;       //0x10,0x10为单字节高度
-    if(HeaderMask & 0x40) dest << (quint8)bgColor;//压背景颜色
-    if(HeaderMask & 0x80) dest << (quint8)PaletteSize;//调色板个数(256时为0)
+    quint8 Data = (Scan & 0x03) << 5;//扫描方法(b6~5)
+    Data |= (Filter & 0x07) << 2;//滤波器方法(b4~2)
+    if(isOnlyData) Data |= 0x80; //纯数据时置最高位b7
+    if(HeaderMask & 0x40) dest << (quint8)(Data | Compression & 0x03); //压缩方法(b1~0), 
+    if(HeaderMask & 0x80) dest << (quint8)PaletteCount;//256时为0
   }
 
-   //有时无条件提取调色板数据
-   char *color = NULL;
-   if((mcrspixel & 0x80)){//
-     PaletteSize *= 3;//RGB
-     color = new char[PaletteSize];
-     pic.readRawData(color, PaletteSize); //读取原数据调色板
-   }
-   else PaletteSize = 0;//无全局调色板
-  //填充调色板
-   unsigned char Mask = FunMask & 0x06;
-   if((color != NULL) && Mask){//使用全局调色板时
-     if((toColorType != 0) && (Mask == 0x06)){//转换为目标调色板
-       for(unsigned short pos = 0; pos < PaletteSize; pos += 3){
-         if(toColorType == 1){ //数组RGB排列,直接对应
-          dest << (quint8)color[pos + 0];
-          dest << (quint8)color[pos + 1];
-          dest << (quint8)color[pos + 2];
-         }
-         else{
-           unsigned long ARGB = Lsb2Ul(&color[pos]);
-           if(toColorType == 2){ //RGB565
-             dest << (quint16)toRGB565(ARGB);
-           }
-           else if(toColorType == 3){ //RGBM666
-             dest << (quint8)toRGBM666(ARGB);
-           }
-           else return  QString(tr("不支持的目标色系"));
-         }
-       }//end for
-     }//endif
-     else dest.writeRawData(color ,PaletteSize);//使用数据调色板
-     delete color;
+   //=====================填充调色板
+  if(PaletteCount){
+    unsigned short PaletteSize = PaletteCount * 3; ////调色板数字节数
+    pltePos += 8;//移至调色板位置了
+    if(!(FunMask & 0x04) || (toColorType <= 1)){//原调色板或RGB24时，直接对应
+      dest.writeRawData(&raw[pltePos] ,PaletteSize);//并入
+    }
+    else{//其它需要一个个转换
+      for(; PaletteSize > 0; PaletteSize-= 3, pltePos+= 3){
+        unsigned long ARGB = RGB24toUl(&raw[pltePos]);
+        if(toColorType == 2) dest << (quint16)toRGB565(ARGB);
+        else if(toColorType == 3)  dest << (quint8)toRGBM666(ARGB);
+        else return  QString(tr("不支持的目标色系"));
+     }//end for
    }//end if
-
-
-  //紧跟着应该是图形控制扩展(Graphic Control Extension)，0x21,0xf0,0x04开头，0x04表示跟4个数据，0结尾即共8个数:
-  //0x21: 扩展块标志
-  //0xf0标签类型： 图形控制扩展标签; 或0xfe注释块标签; 或0x01图形文本扩展块; 或0xff应用程序扩展块
-  //0x04: 此标签长度，后跟数据
-  //标答内容对应4个 (单图时为0x00 0x00 0x00 0x00)
-  //0结尾
- //->图形控制扩展后就是LZW压缩格式图片了
-  //gif文件以固定值0x3B结束
-
-  //填充数据
-  if(FunMask & 0x08){//需要数据时
-    PaletteSize += (6+7); //含头了
-    if(picSize <= PaletteSize)  return  QString(tr("图像数据大小域异常"));
-    picSize -= PaletteSize;
-    char *rawData = new char[picSize];
-    pic.readRawData(rawData, picSize);
-    dest.writeRawData(rawData ,picSize);//合并
   }
-  
+
+  //======================填充内容================================
+  if(!(FunMask & 0x08)) return QString(); //无需填充内容
+  if(PngDataMask & 0x01){//强制填充头，此功能可用于独立提取PNG信息
+    dest.writeRawData(&raw[0] ,8);//并入
+  }
+  if(PngDataMask & 0x02){//填充IHDR，此功能可用于独立提取PNG信息
+    dest.writeRawData(&raw[8] ,13 + 12);//并入
+  }
+  if(isOnlyData && (PngDataMask & (1 << 12))){//纯数据时仅并入数据
+    dest.writeRawData(&raw[idatPos + 8] ,Msb2Ul(&raw[idatPos]));//并入
+    return QString();//空
+  }
+
+  RdPos = 33;//从长度域开始，填充需要的数据
+  do{
+    RdSize = Msb2Ul(&raw[RdPos]) + 4 * 3; //含长度4，标识域4+ 本次数据+校验码4
+    QString Header(raw[RdPos + 4]); Header.append(raw[RdPos + 5]); Header.append(raw[RdPos + 6]); Header.append(raw[RdPos + 7]);
+    headerType = mapHeader[Header] & 0x1f;
+    unsigned long Mask = (unsigned long)1 << headerType;
+    if((headerType > 0) && (Mask & PngDataMask)){//有值且允许时填充
+      if(FunMask & 0x40) dest.writeRawData(&raw[RdPos + 8] ,RdSize - 12);//去头去尾并入
+      else dest.writeRawData(&raw[RdPos] ,RdSize);//全部并入
+    }
+    RdPos += RdSize; //下次位置
+    if(headerType == 20) break;//最后一个数据块了。
+  }while(RdPos < picSize);
+
   return QString();//空
 }
