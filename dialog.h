@@ -75,16 +75,21 @@ private:
 
     //处理文件
     void Dialog::Pro(bool isIdent); //是否为识别
-    //色系转换
 
+    //色系转换
     unsigned short toRGB565(unsigned long u32);//标准色转RGB565,四舍五入
     unsigned char Scolor256To6(unsigned char sColor);//单种色转换为6色
     unsigned char toRGBM666(unsigned long u32);//标准色转RGBM666,四舍五入
 
-	//处理程序:
-    bool Pro_ResourceMerge(QTextStream &t);  //资源文件合并
-    bool Pro_BinMerge(QTextStream &t);       //bin文件合并
-    bool Pro_CfgCompile(QTextStream &t);     //配置文件编译
+    //资源文件合并:
+    bool Pro_ResourceMerge(QTextStream &t);  
+
+    //bin文件合并
+    bool Pro_BinMerge(QTextStream &t);    
+
+    //配置文件编译
+    bool Pro_CfgCompile(QTextStream &t); 
+    int Pro_CfgCompileData(QDataStream &dest, QString &Desc, QString &Data); //编译一个变量数据
 
 
     //图像转换：

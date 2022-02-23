@@ -122,7 +122,7 @@ void Dialog::setOpenFileName()
 		 if (!fileName.isEmpty())
 		  	directoryLabel->setText(fileName);
 	 }
-	 if(Fun == 4){//打开支持的图像文件
+	 else if(Fun == 4){//打开支持的图像文件
 		 QFileDialog::Options options;
 		 QString selectedFilter;
 		 QString fileName = QFileDialog::getOpenFileName(this,
@@ -134,8 +134,6 @@ void Dialog::setOpenFileName()
 		 if (!fileName.isEmpty())
 		  	directoryLabel->setText(fileName);
 	 }
-
-
 	 else{//打开目录
 		 QFileDialog::Options options = QFileDialog::DontResolveSymlinks | QFileDialog::ShowDirsOnly;
 		 QString directory = QFileDialog::getExistingDirectory(this,
