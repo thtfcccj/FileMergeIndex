@@ -51,6 +51,9 @@ class QLabel;
 class QErrorMessage;
 QT_END_NAMESPACE
 
+
+#define _BAT_NEST_DEEP    3  //批处理时，嵌套深度
+
 class Dialog : public QDialog
 {
     Q_OBJECT
@@ -66,15 +69,19 @@ private slots:
     void setSaveFileName();
 
 private:
-	QPushButton *directoryButton;
+	  QPushButton *directoryButton;
+    QPushButton *openFileNameButton;
+    QPushButton *saveFileNameButton;
+
     QLabel *openFileNameLabel;
-	QLabel *directoryLabel;
+	  QLabel *directoryLabel;
+	  QLabel *noteLabel;
  
   unsigned char Fun;	
   bool IsDisFinal; //禁止提示完成
 
     //处理文件
-    void Dialog::Pro(bool isIdent); //是否为识别
+    bool Dialog::Pro(bool isIdent); //是否为识别,返回false表示异常
 
     //色系转换
     unsigned short toRGB565(unsigned long u32);//标准色转RGB565,四舍五入
@@ -131,6 +138,13 @@ private:
 
     char *laterDelRaw;//ePic图像处理中过中图像数据错误时，等删除的指针
     unsigned long PngDataMask; //PNG时数据块掩码
+
+    //批处理
+    bool Pro_BatPro(QTextStream &t); 
+
+    int BatNestDeep; //批处理嵌套深度
+    QList<QString> BatNestOutFile; //批处理时的输出文件
+    QString WorkDir;//批文件所有文件的总目录
 };
 
 #endif

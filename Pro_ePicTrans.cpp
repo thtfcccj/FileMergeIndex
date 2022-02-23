@@ -121,7 +121,7 @@ bool  Dialog::Pro_ePicTrans(QTextStream &t) //返回true处理完成
   QFile *picFile = new QFile(directoryLabel->text());
   if(picFile->open(QIODevice::ReadOnly) == false){//文件打开失败
     QMessageBox finalmsgBox;
-    finalmsgBox.setText( tr(" 未找到需转换的图像文件,编译已中止！"));
+    finalmsgBox.setText(directoryLabel->text() + tr("\n 图像文件未找到,编译已中止！"));
 	  finalmsgBox.exec();
 
     delete picFile;
@@ -181,11 +181,15 @@ bool  Dialog::Pro_ePicTrans(QTextStream &t) //返回true处理完成
 
   //======================================正确时最后保存数据========================================
   distFile.flush();//保存
-  QString fileName = QFileDialog::getSaveFileName(0, tr("保存成功生成的文件..."),QDir::currentPath(),tr("嵌入式图像格式(*.ePic);;其它格式 (*.*)"));
+   QString fileName;
+  if(BatNestDeep == 0) //当前提定
+    fileName = QFileDialog::getSaveFileName(0, tr("保存成功生成的文件..."),QDir::currentPath(),tr("嵌入式图像格式(*.ePic);;其它格式 (*.*)"));
+  else fileName = BatNestOutFile[BatNestDeep - 1]; //批处理指定
+
   QFile::remove (fileName); //强制先删除
   if(!distFile.copy(fileName)){
 	  QMessageBox finalmsgBox;
-	  QString finalMsg = tr("未指定保存文件或加载处理异常!");
+	  QString finalMsg = fileName + tr("\n 目标文件错误或加载处理异常!");
 	  finalmsgBox.setText(finalMsg);
 	  finalmsgBox.exec();
 

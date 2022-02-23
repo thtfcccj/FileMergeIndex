@@ -44,13 +44,13 @@
 
 
 Dialog::Dialog(QWidget *parent)
-: QDialog(parent),Fun(-1)
+: QDialog(parent),Fun(-1),BatNestOutFile(),WorkDir()
 {
     int frameStyle = QFrame::Sunken | QFrame::Panel;
 
     openFileNameLabel = new QLabel;
     openFileNameLabel->setFrameStyle(frameStyle);
-    QPushButton *openFileNameButton =
+    openFileNameButton =
             new QPushButton(tr("打开脚本文件..."));
 
      directoryLabel = new QLabel;
@@ -58,8 +58,11 @@ Dialog::Dialog(QWidget *parent)
      directoryButton =
              new QPushButton(tr("打开待处理文件目录..."));
 
-     QPushButton *saveFileNameButton =
+     saveFileNameButton =
              new QPushButton(tr("执行并保存结果..."));
+
+     noteLabel = new QLabel;
+     directoryLabel->setFrameStyle(frameStyle);
 
     connect(openFileNameButton, SIGNAL(clicked()),
             this, SLOT(setOpenFileName()));
@@ -82,14 +85,18 @@ Dialog::Dialog(QWidget *parent)
     layout->addWidget(openFileNameButton, 1, 0);
     layout->addWidget(openFileNameLabel, 1, 1);
 
-	layout->addWidget(directoryButton, 2, 0);
+	  layout->addWidget(directoryButton, 2, 0);
     layout->addWidget(directoryLabel, 2, 1);
 
     layout->addWidget(saveFileNameButton, 3, 0);
 
-    setLayout(layout);
+    QVBoxLayout *vlayout = new QVBoxLayout;
+    vlayout->addLayout(layout);
+    vlayout->addWidget(noteLabel);
 
-    setWindowTitle(tr("CCJ多功能文件处理编译器 V1.10       thtfcccj倾情制作"));
+    setLayout(vlayout);
+
+    setWindowTitle(tr("CCJ多功能文件处理与编译器 V2.0   thtfcccj倾情制作"));
 }
 
 void Dialog::setOpenFileName()
@@ -103,8 +110,11 @@ void Dialog::setOpenFileName()
                                 &selectedFilter,
                                 options);
 	if (!fileName.isEmpty()){
-        openFileNameLabel->setText(fileName);
+      noteLabel->setText(tr(""));
+      openFileNameLabel->setText(fileName);
+      BatNestDeep = 0;//从头开始
 	    Pro(true);//编译预处理
+      BatNestDeep = 0;//最后复位
 	}
 }
 
@@ -116,13 +126,13 @@ void Dialog::setOpenFileName()
 		 QString fileName = QFileDialog::getOpenFileName(this,
 									tr("需编译的csv格式文件..."),
 									openFileNameLabel->text(),
-									tr("Text Files (*.csv)"),
+									tr("csv Files (*.csv)"),
 									&selectedFilter,
 									options);
 		 if (!fileName.isEmpty())
 		  	directoryLabel->setText(fileName);
 	 }
-	 else if(Fun == 4){//打开支持的图像文件
+	 if(Fun == 4){//打开支持的图像文件
 		 QFileDialog::Options options;
 		 QString selectedFilter;
 		 QString fileName = QFileDialog::getOpenFileName(this,
@@ -134,6 +144,18 @@ void Dialog::setOpenFileName()
 		 if (!fileName.isEmpty())
 		  	directoryLabel->setText(fileName);
 	 }
+	 if(Fun == 5){//打开批处理脚本文件
+		 QFileDialog::Options options = QFileDialog::DontResolveSymlinks | QFileDialog::ShowDirsOnly;
+		 QString directory = QFileDialog::getExistingDirectory(this,
+									 tr("选择脚本内文总目录..."),
+									 directoryLabel->text(),
+									 options);
+     if (!directory.isEmpty()){
+			 directoryLabel->setText(directory);
+       WorkDir = directory;
+     }
+	 }
+
 	 else{//打开目录
 		 QFileDialog::Options options = QFileDialog::DontResolveSymlinks | QFileDialog::ShowDirsOnly;
 		 QString directory = QFileDialog::getExistingDirectory(this,
@@ -143,28 +165,40 @@ void Dialog::setOpenFileName()
 		 if (!directory.isEmpty())
 			 directoryLabel->setText(directory);
 	 }
+
+   noteLabel->setText(tr(""));
  }
 
 
 void Dialog::setSaveFileName()
 {
+  //关闭全部按钮
+  directoryButton->setEnabled(false);
+  openFileNameButton->setEnabled(false);
+  saveFileNameButton->setEnabled(false);
+
   Pro(false);//编译
+
+  //开启全部按钮
+  directoryButton->setEnabled(true);
+  openFileNameButton->setEnabled(true);
+  saveFileNameButton->setEnabled(true);
+
 }
 
 //处理文件
-void Dialog::Pro(bool isIdent)//是否为识别
+bool Dialog::Pro(bool isIdent)//是否为识别
 {
   //打开脚本文件并处理信息
   QFile *descFile = new QFile(openFileNameLabel->text());
-  if(descFile->open(QIODevice::ReadOnly) == false){//文件打开失败
-
-	QMessageBox finalmsgBox;
-	QString finalMsg = tr("脚本文件打开失败,请重新指定或打开!");
-	finalmsgBox.setText(finalMsg);
-	finalmsgBox.exec();
+    if(descFile->open(QIODevice::ReadOnly) == false){//文件打开失败
+	  QMessageBox finalmsgBox;
+	  QString finalMsg = openFileNameLabel->text() + tr("\n脚本打开失败,请重新指定或打开!");
+	  finalmsgBox.setText(finalMsg);
+	  finalmsgBox.exec();
 
     delete descFile;
-    return;
+    return false;
   }
   QTextStream t(descFile);//脚本为文件流
 
@@ -172,59 +206,98 @@ void Dialog::Pro(bool isIdent)//是否为识别
   QString Line = t.readLine();//
   QStringList Para = Line.split(';'); //;后为注释
 
-  bool Resume = false;//识别时不提示
+  bool Resume = true;//用于提示提示
   IsDisFinal = false;//默认允许提示
   if((Para[0] == tr("ccj文件合并描述脚本V1.00")) || //资源合并器 原描述兼容
      (Para[0] == tr("ccj资源文件合并脚本V1.00"))){  //新描述
      if(Fun != 1){//脚本切换时
        Fun = 1;
        directoryLabel->setText("");
+       directoryButton->setEnabled(true);
 	     directoryButton->setText(tr("打开待合并文件所在目录..."));
 	   }
-     if(isIdent == false) Resume = Pro_ResourceMerge(t); 
+     if(isIdent == false){
+       if(BatNestDeep == 0) noteLabel->setText(tr("资源文件合并正在处理..."));
+       Resume = Pro_ResourceMerge(t); 
+     }
   }
 
   else if(Para[0] == tr("ccj bin文件合并描述脚本V1.00")){//
     if(Fun != 2){//脚本切换时
       Fun = 2;
       directoryLabel->setText("");
+      directoryButton->setEnabled(true);
 	    directoryButton->setText(tr("打开待合并文件所在目录..."));
 	  }
-    if(isIdent == false) Resume = Pro_BinMerge(t); //bin文件合并器
+     if(isIdent == false){
+       if(BatNestDeep == 0) noteLabel->setText(tr("bin文件合并正在处理..."));
+       Resume = Pro_BinMerge(t); //bin文件合并器
+     }
   }
 
   else if(Para[0] == tr("ccj 配置编译选项V1.00")){//
     if(Fun != 3){//脚本切换时
       Fun = 3;
       directoryLabel->setText("");
+      directoryButton->setEnabled(true);
 	    directoryButton->setText(tr("打开需编译的csv格式文件..."));
 	  }
-    if(isIdent == false) Resume = Pro_CfgCompile(t); //bin文件合并器
+     if(isIdent == false){
+       if(BatNestDeep == 0) noteLabel->setText(tr("配置文件正在编译..."));
+       Resume = Pro_CfgCompile(t);
+     }
   }
   else if(Para[0] == tr("ccj ePic图片转换配置V1.00")){//
     if(Fun != 4){//脚本切换时
       Fun = 4;
       directoryLabel->setText("");
+      directoryButton->setEnabled(true);
 	    directoryButton->setText(tr("打开需转换的图像..."));
 	  }
-    if(isIdent == false) Resume = Pro_ePicTrans(t); 
+     if(isIdent == false){
+       if(BatNestDeep == 0) noteLabel->setText(tr("正在处理图片数据..."));
+       Resume = Pro_ePicTrans(t); 
+     }
+  }
+  else if(Para[0] == tr("批处理执行脚本V1.00")){//
+    if(Fun != 5){//脚本切换时
+      Fun = 5;
+      directoryLabel->setText("");
+	    directoryButton->setEnabled(true);
+      directoryButton->setText(tr("脚本内指定文件总目录..."));
+	  }
+    if(isIdent == false){
+      BatNestDeep++;
+      Resume = Pro_BatPro(t);
+      BatNestDeep--;
+      //其它处理返回恢复
+      Fun = 5;
+      directoryButton->setText(tr("脚本内文件总目录..."));
+    }
   }
   else{
     QMessageBox msgBox;
     msgBox.setText(tr("首行文件描述不能识别，请加载正确的脚本文件!"));
     msgBox.exec();
+	  Resume = false;
+  }
+  descFile->close();
+  delete descFile;
 
-	Resume = false;
+  if(isIdent == true) return Resume; //识别返回
+  else{
+     if(Resume == true) noteLabel->setText(tr("处理已成功完成！"));
+     else if(Fun != 5)  noteLabel->setText(tr("处理过程发生错误！"));
   }
 
-   descFile->close();
-   delete descFile;
-
   //处理成功返回
-  if((Resume == true) &&  (IsDisFinal == false)){
+  if((BatNestDeep == 0) && (Resume == true) &&  (IsDisFinal == false)){
+    noteLabel->setText(tr("成功处理完成，已产生输出文件！"));
     QMessageBox finalmsgBox;
     QString finalMsg = tr("处理成功！                   ");
     finalmsgBox.setText(finalMsg);
     finalmsgBox.exec();
   }
+
+  return Resume;
 }

@@ -366,11 +366,15 @@ bool  Dialog::Pro_CfgCompile(QTextStream &t) //返回true处理完成
 
   //======================================正确时最后保存数据========================================
   distFile.flush();//保存
-  QString fileName = QFileDialog::getSaveFileName(0, tr("保存成功生成的文件..."),QDir::currentPath(),tr("Bin格式(*.Bin)"));
+  QString fileName;
+  if(BatNestDeep == 0) //当前提定
+    fileName = QFileDialog::getSaveFileName(0, tr("保存成功生成的文件..."),QDir::currentPath(),tr("Bin格式(*.Bin)"));
+  else fileName = BatNestOutFile[BatNestDeep - 1]; //批处理指定
+
   QFile::remove (fileName); //强制先删除
   if(!distFile.copy(fileName)){
 	  QMessageBox finalmsgBox;
-	  QString finalMsg = tr("未指定保存文件或加载处理异常!");
+	  QString finalMsg = fileName + tr("\n 目标文件错误或加载处理异常!");
 	  finalmsgBox.setText(finalMsg);
 	  finalmsgBox.exec();
 
@@ -380,7 +384,7 @@ bool  Dialog::Pro_CfgCompile(QTextStream &t) //返回true处理完成
 
 
   //未禁止提示时，这里提示编译情况
-  if(IsDisFinal == false){
+  if((BatNestDeep == 0) && (IsDisFinal == false)){
     IsDisFinal = true;//返回后不需要提示了
 	  QMessageBox finalmsgBox;
 	  QString finalMsg = tr("编译成功完成!\n 共扫描 ") + QString::number(lineCount - 1)  + tr(" 行数据\n 有效数据 ") + 
