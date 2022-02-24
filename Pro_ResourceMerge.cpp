@@ -120,7 +120,7 @@ bool  Dialog::Pro_ResourceMerge(QTextStream &t) //返回true处理完成
 
   //=======================================填充目标文件前部的数据头索引========================================
   //为空预留，有后续不满时，直接填充0x00000000
-  unsigned long curPos = (binFileCount + 1) * 4 + Base;//用于检查文件容量超限情况
+  unsigned long curPos = (binFileCount + 1) * indexLen + Base;//用于检查文件容量超限情况
   QDataStream dest(&distFile);  //结果为数据流，需二进制处理
   if(isMsb) dest.setByteOrder(QDataStream::BigEndian);//大端高位在前
   else dest.setByteOrder(QDataStream::LittleEndian);//小端低位在前
@@ -172,7 +172,7 @@ bool  Dialog::Pro_ResourceMerge(QTextStream &t) //返回true处理完成
     }
 
   //=======================================填充目标数据========================================
-  curPos = (binFileCount + 1) * 4;//用于检查文件容量超限情况
+  curPos = (binFileCount + 1) * indexLen + Base;//用于检查文件容量超限情况
   for(int Pos = 0; Pos < ValidCount; Pos++){
    //空文件跳过
 	if(listPath[Pos][0] == ' '){
@@ -220,7 +220,7 @@ bool  Dialog::Pro_ResourceMerge(QTextStream &t) //返回true处理完成
   distFile.flush();//保存
   QString fileName;
   if(BatNestDeep == 0) //当前提定
-    QFileDialog::getSaveFileName(0, tr("保存成功生成的文件..."),QDir::currentPath(),tr("Bin格式(*.Bin)"));
+    fileName =QFileDialog::getSaveFileName(0, tr("保存成功生成的文件..."),QDir::currentPath(),tr("Bin格式(*.Bin)"));
   else fileName = BatNestOutFile[BatNestDeep - 1]; //批处理指定
 
   QFile::remove (fileName); //强制先删除

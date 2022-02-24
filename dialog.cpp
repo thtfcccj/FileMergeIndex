@@ -132,7 +132,7 @@ void Dialog::setOpenFileName()
 		 if (!fileName.isEmpty())
 		  	directoryLabel->setText(fileName);
 	 }
-	 if(Fun == 4){//打开支持的图像文件
+	 else if(Fun == 4){//打开支持的图像文件
 		 QFileDialog::Options options;
 		 QString selectedFilter;
 		 QString fileName = QFileDialog::getOpenFileName(this,
@@ -144,7 +144,7 @@ void Dialog::setOpenFileName()
 		 if (!fileName.isEmpty())
 		  	directoryLabel->setText(fileName);
 	 }
-	 if(Fun == 5){//打开批处理脚本文件
+	 else if(Fun == 5){//打开批处理脚本文件
 		 QFileDialog::Options options = QFileDialog::DontResolveSymlinks | QFileDialog::ShowDirsOnly;
 		 QString directory = QFileDialog::getExistingDirectory(this,
 									 tr("选择脚本内文总目录..."),
@@ -155,7 +155,18 @@ void Dialog::setOpenFileName()
        WorkDir = directory;
      }
 	 }
-
+	 else if(Fun == 6){//打开字符串文件
+		 QFileDialog::Options options;
+		 QString selectedFilter;
+		 QString fileName = QFileDialog::getOpenFileName(this,
+									tr("需编译的txt格式字符串文件..."),
+									openFileNameLabel->text(),
+									tr("txt Files (*.txt)"),
+									&selectedFilter,
+									options);
+		 if (!fileName.isEmpty())
+		  	directoryLabel->setText(fileName);
+   }
 	 else{//打开目录
 		 QFileDialog::Options options = QFileDialog::DontResolveSymlinks | QFileDialog::ShowDirsOnly;
 		 QString directory = QFileDialog::getExistingDirectory(this,
@@ -275,6 +286,19 @@ bool Dialog::Pro(bool isIdent)//是否为识别
       directoryButton->setText(tr("脚本内文件总目录..."));
     }
   }
+  else if(Para[0] == tr("ccj字符串资源编译配置脚本V1.00")){//
+    if(Fun != 6){//脚本切换时
+      Fun = 6;
+      directoryLabel->setText("");
+      directoryButton->setEnabled(true);
+	    directoryButton->setText(tr("字符串资源文件所在目录..."));
+	  }
+     if(isIdent == false){
+       if(BatNestDeep == 0) noteLabel->setText(tr("字符串资源正在编译..."));
+       Resume = Pro_StringCompile(t);
+     }
+  }
+
   else{
     QMessageBox msgBox;
     msgBox.setText(tr("首行文件描述不能识别，请加载正确的脚本文件!"));

@@ -7,6 +7,7 @@
 // 4. 不需要的行可加“//”注释掉
 // 5. outFile文件所在目录必须真实存在，否则将报错！
 
+
 >>ePicTrans:转换示例图片;                                   //图片格式转换
   scriptFile: \ePic图片转换说明及示例\ePicCfgScript.txt;     //指定配置脚本位置
   picFile:    \ePic图片转换说明及示例\5x7.wbm;              //需编译的图片文件
@@ -18,6 +19,11 @@
   scriptFile: \ePic图片转换说明及示例\提取图像纯数据脚本.txt; //可重新指定配置脚本，编译下一个
   picFile:    \ePic图片转换说明及示例\qt2.bmp;           //需编译的图片文件
   outFile:   \批处理示例输出\qt2.ePic;                  //指定需输出的图片文件名
+
+>>stringCompile:编译示例字符串资源;                           //图片格式转换
+  scriptFile: \字符串资源编译说明及示例\StringCompileCfgScript.txt;  //指定配置脚本位置
+  txtFile:    \字符串资源编译说明及示例\待编译字符串示例.txt;  //需编译的txt文件
+  outFile:   \批处理示例输出\txt.bin;                      //指定需输出的图片文件名
 
 >>resourceMerge: 合并资源示例文件;                          //合并资源文件名
   scriptFile: \资源文件合并功能说明及示例\MargeScript.txt;  //指定配置脚本位置，含需并的文件
