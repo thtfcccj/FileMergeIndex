@@ -79,7 +79,7 @@ bool  Dialog::Pro_ResourceMerge(QTextStream &t) //返回true处理完成
   int indexLen = 4; 
   if(Para.count() >= 3){
     int len = Para[2].toInt(&OK);
-    if((OK == true) && (len <= 4) && (len >= 1)) indexLen = len;
+    if((OK == true) && (len <= 4) && (len >= 0)) indexLen = len;
   }
 
   //=======================================获取并缓存得路径位置========================================
@@ -120,65 +120,72 @@ bool  Dialog::Pro_ResourceMerge(QTextStream &t) //返回true处理完成
   }
 
   //=======================================填充目标文件前部的数据头索引========================================
-  //为空预留，有后续不满时，直接填充0x00000000
-  unsigned long curPos = (binFileCount + 1) * indexLen + Base;//用于检查文件容量超限情况
   QDataStream dest(&distFile);  //结果为数据流，需二进制处理
   if(isMsb) dest.setByteOrder(QDataStream::BigEndian);//大端高位在前
   else dest.setByteOrder(QDataStream::LittleEndian);//小端低位在前
-  int ErrCount = 0;
-  for(int Pos = 0; Pos < ValidCount; Pos++){
-     //空文件预留
-	  if(listPath[Pos][0] == ' '){
-      ErrCount += Pro_fullLenData(dest, curPos, indexLen);
-	    continue;
-	  }
-	  //获取文件信息中的大小
-    QFileInfo FileInfo(listPath[Pos]);
-    if(FileInfo.exists() == false){//文件不存在时
-	  QMessageBox finalmsgBox;
-	  QString finalMsg = listPath[Pos] + tr(" 未被找到,索引填充已中止！");
-	  finalmsgBox.setText(finalMsg);
-	  finalmsgBox.exec();
 
-      distFile.close();
-      return false;
-    };
-    qint64 Size = FileInfo.size();
-    if(Size >= (qint64)(0xffffffff - curPos)){
+  //为空预留，有后续不满时，直接填充0x00000000
+  unsigned long curPos;
+  if(indexLen){//有数据头时
+    curPos = (binFileCount + 1) * indexLen + Base;//用于检查文件容量超限情况
+    int ErrCount = 0;
+    for(int Pos = 0; Pos < ValidCount; Pos++){
+       //空文件预留
+	    if(listPath[Pos][0] == ' '){
+        ErrCount += Pro_fullLenData(dest, curPos, indexLen);
+	      continue;
+	    }
+	    //获取文件信息中的大小
+      QFileInfo FileInfo(listPath[Pos]);
+      if(FileInfo.exists() == false){//文件不存在时
 	    QMessageBox finalmsgBox;
-	    QString finalMsg = listPath[Pos] + tr(" 合并后文件过大,索引填充已中止！");
+	    QString finalMsg = listPath[Pos] + tr(" 未被找到,索引填充已中止！");
 	    finalmsgBox.setText(finalMsg);
 	    finalmsgBox.exec();
 
-      distFile.close();
-      return false;
-    }
-	  //填充充当前数据起始位置
-    ErrCount += Pro_fullLenData(dest, curPos, indexLen);
-	//更新下个数据起始位置
-    curPos += Size; 
-  }
-  //后续不满时，直接填充最后值,并在最后加上结束位置
-  for(int Pos = ValidCount; Pos <= binFileCount; Pos++){
-    ErrCount += Pro_fullLenData(dest, curPos, indexLen);
-  }
-  if(ErrCount){
-	  QMessageBox finalmsgBox;
-	  QString finalMsg =  tr("共有 ") + QString::number(ErrCount)  + tr(" 个索引值超过索引长度表达范围，索引填充已中止！");
-	    finalmsgBox.setText(finalMsg);
-	    finalmsgBox.exec();
+        distFile.close();
+        return false;
+      };
+      qint64 Size = FileInfo.size();
+      if(Size >= (qint64)(0xffffffff - curPos)){
+	      QMessageBox finalmsgBox;
+	      QString finalMsg = listPath[Pos] + tr(" 合并后文件过大,索引填充已中止！");
+	      finalmsgBox.setText(finalMsg);
+	      finalmsgBox.exec();
 
-      distFile.close();
-      return false;
+        distFile.close();
+        return false;
+      }
+	    //填充充当前数据起始位置
+      ErrCount += Pro_fullLenData(dest, curPos, indexLen);
+	  //更新下个数据起始位置
+      curPos += Size; 
     }
+    //后续不满时，直接填充最后值,并在最后加上结束位置
+    for(int Pos = ValidCount; Pos <= binFileCount; Pos++){
+      ErrCount += Pro_fullLenData(dest, curPos, indexLen);
+    }
+    if(ErrCount){
+	    QMessageBox finalmsgBox;
+	    QString finalMsg =  tr("共有 ") + QString::number(ErrCount)  + tr(" 个索引值超过索引长度表达范围，索引填充已中止！");
+	      finalmsgBox.setText(finalMsg);
+	      finalmsgBox.exec();
+
+        distFile.close();
+        return false;
+      }
+    curPos = (binFileCount + 1) * indexLen + Base;//填充时用于检查文件容量超限情况
+  }
+  else{//无数据头
+    curPos = 0;//填充时用于检查文件容量超限情况
+  }
 
   //=======================================填充目标数据========================================
-  curPos = (binFileCount + 1) * indexLen + Base;//用于检查文件容量超限情况
   for(int Pos = 0; Pos < ValidCount; Pos++){
-   //空文件跳过
-	if(listPath[Pos][0] == ' '){
-	  continue;
-	}
+    //空文件跳过
+	  if(listPath[Pos][0] == ' '){
+	    continue;
+	  }
     //加载文件
     QFile *curFile = new QFile(listPath[Pos]);
     if(curFile->open(QIODevice::ReadOnly) == false){//文件打开失败
@@ -191,7 +198,7 @@ bool  Dialog::Pro_ResourceMerge(QTextStream &t) //返回true处理完成
       distFile.close();
       return false;
     };
-	qint64 curSize = curFile->size();
+	  qint64 curSize = curFile->size();
     if(curSize > (qint64)(0xffffffff - curPos)){
 	  QMessageBox finalmsgBox;
 	  QString finalMsg = listPath[Pos] + tr(" 合并后文件过大,合并已中止！");
@@ -203,13 +210,13 @@ bool  Dialog::Pro_ResourceMerge(QTextStream &t) //返回true处理完成
       distFile.close();
       return false;
     }
-	//加载数据流
+	  //加载数据流
     QDataStream source(curFile);  //读数据流
     char *raw = new char[curSize];
-	source.readRawData(raw, curSize);
-	//合并入数据流
+	  source.readRawData(raw, curSize);
+	 //合并入数据流
     dest.writeRawData(raw ,curSize);//合并
-	//更新下个数据起始位置
+	 //更新下个数据起始位置
     curPos += curSize; 
     delete raw;
 
