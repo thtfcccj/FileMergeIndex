@@ -117,16 +117,15 @@ QString  Dialog::Png2epic(QDataStream &pic,
 
   //====================填充数据头
   if(FunMask & 0x01){//需要数据头时
-    if(HeaderMask & 0x01) dest << (quint8)'n';//g前缀
+    unsigned char vLenMask = FunMask & 0x80; //可变长度位
+    if(HeaderMask & 0x01) {
+      char Flag = 'n';//n前缀
+      if(vLenMask) Flag |= 0x80; //压缩数据头标志
+      dest << (quint8)Flag;
+    }
     if(HeaderMask & 0x02) dest << (quint8)(((colorType & 0x07) << 5) | colorDeep); //颜色类型b5~7与色深信息b4~0
-
-    unsigned char Mask = HeaderMask & 0x0c;
-    if(Mask == 0x0c) dest << (quint16)biWidth;   //双字节宽度
-    else if(Mask) dest << (quint8)biWidth;      //0x04,0x08为单字节宽度
-
-    Mask = HeaderMask & 0x30;
-    if(Mask == 0x30) dest << (quint16)biHeight;   //双字节高度
-    else if(Mask) dest << (quint8)biHeight;       //0x10,0x10为单字节高度
+    PushWH(dest, biWidth, (HeaderMask &0x0C) | vLenMask);//宽度
+    PushWH(dest, biHeight, (HeaderMask &0x30) | vLenMask);//高度
     quint8 Data = (Scan & 0x03) << 5;//扫描方法(b6~5)
     Data |= (Filter & 0x07) << 2;//滤波器方法(b4~2)
     if(isOnlyData) Data |= 0x80; //纯数据时置最高位b7

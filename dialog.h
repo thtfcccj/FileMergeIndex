@@ -118,6 +118,12 @@ private:
    unsigned short Msb2Us(const char *raw);
    unsigned long RGB24toUl(const char *raw);//RGB数组转换
 
+  //压入宽度与高度入图像数据头
+   void PushWH(QDataStream &dest,
+                    unsigned short wh,
+                    unsigned char Mask);
+
+
    //wbmp格式转ePic, 返回空格符转换正确，否则描述错识位置
    QString  Wbmp2epic(QDataStream &pic,
                                       QDataStream &dest,

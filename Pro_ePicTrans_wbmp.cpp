@@ -7,6 +7,25 @@
 
 #include "dialog.h"
 
+//---------------------------------压入宽度与高度入图像数据头----------------------------------------------
+void Dialog::PushWH(QDataStream &dest,
+                    unsigned short wh,
+                    unsigned char Mask)
+
+{
+  if(Mask & 0x80){//可变数据头时
+    if(wh < 127) dest << (quint8)wh;      //1位表示
+    else{//两位表示
+      dest << (quint8)((wh & 0x7f) | 0x80); //低位
+      dest << (quint8)(wh >> 7);
+    }
+  }
+  else{//固定长度
+    if(Mask == 0x0c) dest << (quint16)wh;   //双字节宽度
+    else if(Mask) dest << (quint8)wh;      //0x04,0x08为单字节宽度
+  }
+}
+
 //---------------------------------wbmp格式转ePic----------------------------------------------
 //返回空格符转换正确，否则描述错识位置
 QString  Dialog::Wbmp2epic(QDataStream &pic,
@@ -42,18 +61,19 @@ QString  Dialog::Wbmp2epic(QDataStream &pic,
 
   //填充数据头
   if(FunMask & 0x01){//需要数据头时
-    if(HeaderMask & 0x01) dest << (quint8)'w';//w前缀
-    if(HeaderMask & 0x02) dest << (quint8)1; //1bit色深
-
-    unsigned char Mask = HeaderMask & 0x0c;
-    if(Mask == 0x0c) dest << (quint16)w;   //双字节宽度
-    else if(Mask) dest << (quint8)w;      //0x04,0x08为单字节宽度
-
-    Mask = HeaderMask & 0x30;
-    if(Mask == 0x30) dest << (quint16)h;   //双字节高度
-    else if(Mask) dest << (quint8)h;       //0x10,0x10为单字节高度
-    if(HeaderMask & 0x40) dest << (quint8)0;//压缩方式：无压缩
-    if(HeaderMask & 0x80) dest << (quint8)0;//无调色板
+    unsigned char vLenMask = FunMask & 0x80; //可变长度位
+    if(HeaderMask & 0x01) {
+      char Flag = 'w';//w前缀
+      if(vLenMask) Flag |= 0x80; //压缩数据头标志
+      dest << (quint8)Flag;
+    }
+    if(!vLenMask && (HeaderMask & 0x02)) dest << (quint8)1; //1bit色深
+    PushWH(dest, w, (HeaderMask &0x0C) | vLenMask);//宽度
+    PushWH(dest, h, (HeaderMask &0x30) | vLenMask);//高度
+    if(!vLenMask){//固定长度时
+      if(HeaderMask & 0x40) dest << (quint8)0;//压缩方式：无压缩
+      if(HeaderMask & 0x80) dest << (quint8)0;//无调色板
+    }
   }
   //0x02,0x04: 填充查找表(无)
 
