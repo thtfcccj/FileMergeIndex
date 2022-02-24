@@ -88,6 +88,12 @@ private:
     unsigned char Scolor256To6(unsigned char sColor);//单种色转换为6色
     unsigned char toRGBM666(unsigned long u32);//标准色转RGBM666,四舍五入
 
+    //其它
+    //向数据流填充指长度字符,超限时返回1，否则返回0
+     int Pro_fullLenData(QDataStream &dest,
+                              quint32 Data,
+                              int Len);
+
     //资源文件合并:
     bool Pro_ResourceMerge(QTextStream &t);  
 

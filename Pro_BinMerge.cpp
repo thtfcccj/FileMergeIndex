@@ -66,8 +66,11 @@ bool  Dialog::Pro_BinMerge(QTextStream &t) //返回true处理完成
 			return false;
 		 }
      prvBase = base;//更新上组
-
-		Pos = directoryLabel->text() + '\\' + subPara[1]; //提取位置并组合成绝对目录
+     if(subPara[1][1] != ':')//当前工作路径
+        Pos = directoryLabel->text() + '\\' + subPara[1]; //提取位置并组合成绝对目录
+      else //绝路路径
+        Pos = subPara[1];
+		
 		ValidCount++;
 	}
     baseAry.append(base);

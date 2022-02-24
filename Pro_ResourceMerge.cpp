@@ -7,6 +7,39 @@
 
 #include "dialog.h"
 
+
+//向数据流填充指长度字符,超限时返回1，否则返回0
+int Dialog::Pro_fullLenData(QDataStream &dest,
+                              quint32 Data,
+                              int Len)
+{
+  if(Len >= 4){
+    dest << (quint32)Data;
+    return 0;
+  }
+  if(Len >= 3){
+    if(dest.byteOrder() == QDataStream::BigEndian){//高位在前
+      dest << (quint16)(Data >> 8);
+      dest << (quint8)Data;
+    }
+    else{ //低位在前
+      dest << (quint16)Data;
+      dest << (quint8)(Data >> 16);
+    }
+    if(Data > 0xffffff) return 1;
+    return 0;
+  }
+  if(Len >= 2){
+    dest << (quint16)Data;
+    if(Data > 0xffff) return 1;
+    return 0;
+  }
+  dest << (quint8)Data;
+  if(Data > 0xff) return 1;
+  return 0;
+}
+
+
 bool  Dialog::Pro_ResourceMerge(QTextStream &t) //返回true处理完成
 {
   //=======================================读取配置信息========================================
@@ -42,18 +75,29 @@ bool  Dialog::Pro_ResourceMerge(QTextStream &t) //返回true处理完成
     bool isLsb = Para[1].toInt(&OK);
     if(OK == true) isMsb = !isLsb;//相反
   }
+  //第三行指定多字节时组合方式
+  int indexLen = 4; 
+  if(Para.count() >= 3){
+    int len = Para[2].toInt(&OK);
+    if((OK == true) && (len <= 4) && (len >= 1)) indexLen = len;
+  }
 
   //=======================================获取并缓存得路径位置========================================
   //第四行起，为需合并文件绝对路径,以;空行结尾,先获得路径位置
   QStringList listPath;
   int ValidCount = 0;
   for(; ValidCount < binFileCount; ValidCount++){
-	Line = t.readLine();
-	Para = Line.split(';'); //;后为注释
+	  Line = t.readLine();
+	  Para = Line.split(';'); //;后为注释
     if(Para[0].isEmpty()) break; //结束了
     QString Pos;
-	if(Para[0][0] == ' ') Pos = ' '; //空格表示中间预留
-    else Pos = directoryLabel->text() + '\\' + Para[0]; //组合成绝对目录
+	  if(Para[0][0] == ' ') Pos = ' '; //空格表示中间预留
+    else{
+     if(Para[0][1] != ':')//当前工作路径
+        Pos = directoryLabel->text() + '\\' + Para[0]; //组合成绝对目录
+      else //绝路路径
+        Pos = Para[0];
+    }
     listPath << Pos;
   }
   if(ValidCount < 1){
@@ -80,18 +124,18 @@ bool  Dialog::Pro_ResourceMerge(QTextStream &t) //返回true处理完成
   QDataStream dest(&distFile);  //结果为数据流，需二进制处理
   if(isMsb) dest.setByteOrder(QDataStream::BigEndian);//大端高位在前
   else dest.setByteOrder(QDataStream::LittleEndian);//小端低位在前
-
+  int ErrCount = 0;
   for(int Pos = 0; Pos < ValidCount; Pos++){
    //空文件预留
 	if(listPath[Pos][0] == ' '){
-      dest << (quint32)curPos;
+    ErrCount += Pro_fullLenData(dest, curPos, indexLen);
 	  continue;
 	}
 	//获取文件信息中的大小
     QFileInfo FileInfo(listPath[Pos]);
     if(FileInfo.exists() == false){//文件不存在时
 	  QMessageBox finalmsgBox;
-	  QString finalMsg = listPath[Pos] + tr(" 未被找到,预处理已中止！");
+	  QString finalMsg = listPath[Pos] + tr(" 未被找到,索引填充已中止！");
 	  finalmsgBox.setText(finalMsg);
 	  finalmsgBox.exec();
 
@@ -100,23 +144,32 @@ bool  Dialog::Pro_ResourceMerge(QTextStream &t) //返回true处理完成
     };
     qint64 Size = FileInfo.size();
     if(Size >= (qint64)(0xffffffff - curPos)){
-	  QMessageBox finalmsgBox;
-	  QString finalMsg = listPath[Pos] + tr(" 合并后文件过大,预处理已中止！");
-	  finalmsgBox.setText(finalMsg);
-	  finalmsgBox.exec();
+	    QMessageBox finalmsgBox;
+	    QString finalMsg = listPath[Pos] + tr(" 合并后文件过大,索引填充已中止！");
+	    finalmsgBox.setText(finalMsg);
+	    finalmsgBox.exec();
 
       distFile.close();
       return false;
     }
-	//填充充当前数据起始位置
-    dest << (quint32)curPos;
+	  //填充充当前数据起始位置
+    ErrCount += Pro_fullLenData(dest, curPos, indexLen);
 	//更新下个数据起始位置
     curPos += Size; 
   }
   //后续不满时，直接填充最后值,并在最后加上结束位置
   for(int Pos = ValidCount; Pos <= binFileCount; Pos++){
-    dest << (quint32)curPos;
+    ErrCount += Pro_fullLenData(dest, curPos, indexLen);
   }
+  if(ErrCount){
+	  QMessageBox finalmsgBox;
+	  QString finalMsg =  tr("共有 ") + QString::number(ErrCount)  + tr(" 个索引值超过索引长度表达范围，索引填充已中止！");
+	    finalmsgBox.setText(finalMsg);
+	    finalmsgBox.exec();
+
+      distFile.close();
+      return false;
+    }
 
   //=======================================填充目标数据========================================
   curPos = (binFileCount + 1) * 4;//用于检查文件容量超限情况

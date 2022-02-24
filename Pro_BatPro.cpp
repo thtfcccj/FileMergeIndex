@@ -121,10 +121,10 @@ bool  Dialog::Pro_BatPro(QTextStream &t) //返回true处理完成
         return false;
       }
       UnitState = 3; //单元状态有编译器和脚本文件名，文件了
-      if(para1[1] != ':')//当前工作路径
+      if((para1.size() >  1) || subPara.size() <= 2) //当前工作路径
         directoryLabel->setText(WorkDir + para1);
-      else //绝路路径
-        directoryLabel->setText(para1);
+      else //绝路路径首字为A~F, 中间:被分成了两半
+        directoryLabel->setText(para1 + subPara[2]);
       continue; //继续下一行
     }
     //================================输出执行处理===================================
@@ -141,10 +141,11 @@ bool  Dialog::Pro_BatPro(QTextStream &t) //返回true处理完成
       }
 
       QString OutFile;
-      if(para1[1] != ':')//当前工作路径
+      if((para1.size() >  1) || subPara.size() <= 2) //当前工作路径
         OutFile = WorkDir + para1;
-      else //绝路路径
-        OutFile = para1;
+      else //绝路路径首字为A~F, 中间:被分成了两半
+        OutFile = para1 + subPara[2];
+
       BatNestOutFile.insert(BatNestDeep - 1,OutFile);
       //更新提示
       noteLabel->setText(tr("正在编译: ") + curUnitName + tr("  单元,输出:") + OutFile);
