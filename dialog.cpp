@@ -167,6 +167,18 @@ void Dialog::setOpenFileName()
 		 if (!fileName.isEmpty())
 		  	directoryLabel->setText(fileName);
    }
+   else if(Fun == 7){//打开需拆分的文件
+		 QFileDialog::Options options;
+		 QString selectedFilter;
+		 QString fileName = QFileDialog::getOpenFileName(this,
+									tr("需拆分的文件..."),
+									openFileNameLabel->text(),
+									tr("*.* Files (*.*)"),
+									&selectedFilter,
+									options);
+		 if (!fileName.isEmpty())
+		  	directoryLabel->setText(fileName);
+	 }
 	 else{//打开目录
 		 QFileDialog::Options options = QFileDialog::DontResolveSymlinks | QFileDialog::ShowDirsOnly;
 		 QString directory = QFileDialog::getExistingDirectory(this,
@@ -298,7 +310,18 @@ bool Dialog::Pro(bool isIdent)//是否为识别
        Resume = Pro_StringCompile(t);
      }
   }
-
+  else if(Para[0] == tr("ccj bin文件拆分描述脚本V1.00")){//
+    if(Fun != 7){//脚本切换时
+      Fun = 7;
+      directoryLabel->setText("");
+      directoryButton->setEnabled(true);
+	    directoryButton->setText(tr("被拆分文件..."));
+	  }
+     if(isIdent == false){
+       if(BatNestDeep == 0) noteLabel->setText(tr("文件正在拆分..."));
+       Resume = Pro_BinSplit(t);
+     }
+  }
   else{
     QMessageBox msgBox;
     msgBox.setText(tr("首行文件描述不能识别，请加载正确的脚本文件!"));

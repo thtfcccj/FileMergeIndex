@@ -215,6 +215,10 @@
 				>
 			</File>
 			<File
+				RelativePath=".\Pro_BinSplit.cpp"
+				>
+			</File>
+			<File
 				RelativePath=".\Pro_CfgCompile.cpp"
 				>
 			</File>

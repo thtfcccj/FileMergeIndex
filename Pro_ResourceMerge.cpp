@@ -93,10 +93,11 @@ bool  Dialog::Pro_ResourceMerge(QTextStream &t) //返回true处理完成
     QString Pos;
 	  if(Para[0][0] == ' ') Pos = ' '; //空格表示中间预留
     else{
-     if(Para[0][1] != ':')//当前工作路径
-        Pos = directoryLabel->text() + '\\' + Para[0]; //组合成绝对目录
+      QString curPara = Para[0].simplified(); //去除前后空格
+      if(curPara[1] != ':')//当前工作路径
+        Pos = directoryLabel->text() + '\\' + curPara; //组合成绝对目录
       else //绝路路径
-        Pos = Para[0];
+        Pos = curPara;
     }
     listPath << Pos;
   }
@@ -126,12 +127,12 @@ bool  Dialog::Pro_ResourceMerge(QTextStream &t) //返回true处理完成
   else dest.setByteOrder(QDataStream::LittleEndian);//小端低位在前
   int ErrCount = 0;
   for(int Pos = 0; Pos < ValidCount; Pos++){
-   //空文件预留
-	if(listPath[Pos][0] == ' '){
-    ErrCount += Pro_fullLenData(dest, curPos, indexLen);
-	  continue;
-	}
-	//获取文件信息中的大小
+     //空文件预留
+	  if(listPath[Pos][0] == ' '){
+      ErrCount += Pro_fullLenData(dest, curPos, indexLen);
+	    continue;
+	  }
+	  //获取文件信息中的大小
     QFileInfo FileInfo(listPath[Pos]);
     if(FileInfo.exists() == false){//文件不存在时
 	  QMessageBox finalmsgBox;

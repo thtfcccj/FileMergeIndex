@@ -61,6 +61,7 @@ bool  Dialog::Pro_BatPro(QTextStream &t) //返回true处理完成
       else if(para0 == ">>cfgCompile")curFunType = 3;
       else if(para0 == ">>ePicTrans")curFunType = 4;
       else if(para0 == ">>stringCompile")curFunType = 6;
+      else if(para0 == ">>binSplit")curFunType = 7;
       else{
 	      QMessageBox msgBox;
         msgBox.setText(QString::number(LinePos)  + tr("行：不能识别的编译器名称，注意区分大小写，编译中止"));
@@ -111,7 +112,9 @@ bool  Dialog::Pro_BatPro(QTextStream &t) //返回true处理完成
     //指定或重替换脚本名称
     if((curFunType <= 2) && (para0 == "InDir") ||//合并文件时为目录
      (curFunType == 3) && (para0 == "csvFile") ||
-     (curFunType == 4) && (para0 == "picFile") || (curFunType == 6) && (para0 == "txtFile"))
+     (curFunType == 4) && (para0 == "picFile") ||
+     (curFunType == 6) && (para0 == "txtFile") ||
+     (curFunType == 7) && (para0 == "splitFile"))
     {
       if(UnitState < 2){
 	      QMessageBox msgBox;

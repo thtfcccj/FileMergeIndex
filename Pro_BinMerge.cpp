@@ -40,19 +40,20 @@ bool  Dialog::Pro_BinMerge(QTextStream &t) //返回true处理完成
   int ValidCount = 0;
   int binFileCount = 0;
   do{
+    if(t.atEnd()) break; //结束了
 	  Line = t.readLine();
 	  Para = Line.split(';'); //;后为注释
-    if(Para[0].isEmpty()) break; //结束了
 
 	  unsigned long base, prvBase = 0;
     QString Pos;
 	  if(Para[0][0] == ' ') {
 		  Pos = ' '; //空格表示中间预留
       base = 0;
-	  }
+    }
 	  else{//有内容了
       QStringList subPara = Para[0].split(','); //,分开
-		  base = subPara[0].toLongLong(&OK,16);//提取基址
+      QString curPara = subPara[0].simplified(); //去除前后空格
+		  base = curPara.toLongLong(&OK,16);//提取基址
 		  if(OK == false){
 		   	QMessageBox msgBox;
 			  msgBox.setText(subPara[0] + tr("基址指定无效，应以“0xnnnnnnnn”方式表达!"));
@@ -66,10 +67,11 @@ bool  Dialog::Pro_BinMerge(QTextStream &t) //返回true处理完成
 			return false;
 		 }
      prvBase = base;//更新上组
-     if(subPara[1][1] != ':')//当前工作路径
-        Pos = directoryLabel->text() + '\\' + subPara[1]; //提取位置并组合成绝对目录
+     curPara = subPara[1].simplified(); //去除前后空格
+     if(curPara[1] != ':')//当前工作路径
+        Pos = directoryLabel->text() + '\\' + curPara; //提取位置并组合成绝对目录
       else //绝路路径
-        Pos = subPara[1];
+        Pos = curPara;
 		
 		ValidCount++;
 	}

@@ -100,8 +100,9 @@ private:
     //字符串编译与合并:
     bool Pro_StringCompile(QTextStream &t);      
 
-    //bin文件合并
+    //bin文件合并与拆分
     bool Pro_BinMerge(QTextStream &t);    
+    bool Pro_BinSplit(QTextStream &t);  
 
     //配置文件编译
     bool Pro_CfgCompile(QTextStream &t); 
