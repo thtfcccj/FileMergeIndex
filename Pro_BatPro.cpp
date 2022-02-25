@@ -16,6 +16,8 @@ bool  Dialog::Pro_BatPro(QTextStream &t) //返回true处理完成
 		msgBox.exec();
 		return false;
   }
+  
+  BatDelay = 0;//默认延时0.1s执行一次以用于中间保存文件
 
   QString prvScpriptName(openFileNameLabel->text());
   QString prvDirName(directoryLabel->text());
@@ -64,6 +66,18 @@ bool  Dialog::Pro_BatPro(QTextStream &t) //返回true处理完成
       else if(para0 == ">>binSplit")curFunType = 7;
       else if(para0 == ">>binLogic")curFunType = 8;
       else{
+        //批处理配置
+        if(para0 == ">>batCfg"){//读取BAT配置,中间以:区分
+           QStringList vol = para1.split('='); //变量处理
+           if(vol.size() == 2){//=时
+             bool isOk;
+             int data = vol[1].toInt(&isOk,10);
+             if(isOk == true){
+               if(vol[0] == "delayMs") BatDelay = data;
+             }
+           }
+           continue; //继续下一行
+        }
 	      QMessageBox msgBox;
         msgBox.setText(QString::number(LinePos)  + tr("行：不能识别的编译器名称，注意区分大小写，编译中止"));
 	      msgBox.exec();
@@ -157,12 +171,14 @@ bool  Dialog::Pro_BatPro(QTextStream &t) //返回true处理完成
       //更新提示
       noteLabel->setText(tr("正在编译: ") + curUnitName + tr("  单元,输出:") + OutFile);
 
+       Delay_MSec(BatDelay);//批处理时，用于看清执行情况
       if(Pro(false) == false){//正式处理异常，需退出
         openFileNameLabel->setText(prvScpriptName);
         directoryLabel->setText(prvDirName);
         noteLabel->setText(tr("对第 ") + QString::number(LinePos) + tr("  行执输出输出时发生编译错误，\n注意检查上两行脚本或被处理文件是否有误，已中止！"));
         return false;
       }
+
       continue; //继续下一行
     }
 

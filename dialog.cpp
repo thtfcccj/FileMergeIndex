@@ -210,6 +210,13 @@ void Dialog::setSaveFileName()
 
 }
 
+void Dialog::Delay_MSec(unsigned int msec)
+{
+    QTime _Timer = QTime::currentTime().addMSecs(msec);
+    while( QTime::currentTime() < _Timer )
+      QCoreApplication::processEvents(QEventLoop::AllEvents, 100);
+}
+
 //处理文件
 bool Dialog::Pro(bool isIdent)//是否为识别
 {

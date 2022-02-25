@@ -132,7 +132,7 @@ int Dialog::Pro_CfgCompileData(QDataStream &dest, QString &Desc, QString &Data)
     }
     else if(Desc == "HEX64"){
       if(bh64 == false) Len = -1; //变量值表达错误
-      else{ dest << (quint64)h64; Len = 8; }
+      else{ dest << h64; Len = 8; }
     }
     else if(Desc == "RGB"){
       if(Data[0] != '#') Len = -1; //变量值表达错误

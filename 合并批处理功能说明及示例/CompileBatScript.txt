@@ -7,6 +7,7 @@
 // 4. 不需要的行可加“//”注释掉
 // 5. outFile文件所在目录必须真实存在，否则将报错！
 
+>>batCfg: delayMs=1000;                                   //批处理配置,延时以便看清楚执行情况
 
 >>ePicTrans:转换示例图片;                                   //图片格式转换
   scriptFile: \ePic图片转换说明及示例\ePicCfgScript.txt;     //指定配置脚本位置

@@ -93,6 +93,7 @@ private:
      int Pro_fullLenData(QDataStream &dest,
                               quint32 Data,
                               int Len);
+     void Delay_MSec(unsigned int msec);
 
     //资源文件合并:
     bool Pro_ResourceMerge(QTextStream &t);  
@@ -160,6 +161,7 @@ private:
     bool Pro_BatPro(QTextStream &t); 
 
     int BatNestDeep; //批处理嵌套深度
+    int BatDelay;   //批处理插入的延时
     QList<QString> BatNestOutFile; //批处理时的输出文件
     QString WorkDir;//批文件所有文件的总目录
 };
