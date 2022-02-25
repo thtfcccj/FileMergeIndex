@@ -44,18 +44,20 @@ QString  Dialog::Wbmp2epic(QDataStream &pic,
   unsigned char DataPos = 3;
   quint16 w = raw[2];
   if(w & 0x80){//最高位置位表示还有下一位
-    w <<= 7; w += raw[3]; DataPos = 4;
+    if(raw[3] & 0x80) w = 0xffff;//超宽了
+    else{w = (w & 0x7f) << 7; w += raw[3]; DataPos = 4;}
   }
   quint16 h = raw[DataPos++];
   if(h & 0x80){//最高位置位表示还有下一位
-    h <<= 7; h += raw[DataPos++];
+    if(raw[DataPos] & 0x80) h = 0xffff;//超高了
+    else {h = (h & 0x7f) << 7; h += raw[DataPos++];}
   }
   if((w >= 16384) || (h >= 16384)) return  QString(tr("不支持宽或高超16384像素的图像"));
 
   //检查数据长度是否正确
-  qint64 bitSize = (unsigned long)w * h;
-  qint64 size = bitSize >> 3; //字节大小
-  if(size & 0x07) size++; //字节对齐
+  unsigned long size = w >> 3;
+  if(w & 0x07) size++; //每行像素8字节对齐
+  size *= h;
   if(picSize != (size + DataPos))  return  QString(tr("文件大小异常，不符合wbmp规则!"));
 
 
