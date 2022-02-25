@@ -179,6 +179,7 @@ void Dialog::setOpenFileName()
 		 if (!fileName.isEmpty())
 		  	directoryLabel->setText(fileName);
 	 }
+
 	 else{//打开目录
 		 QFileDialog::Options options = QFileDialog::DontResolveSymlinks | QFileDialog::ShowDirsOnly;
 		 QString directory = QFileDialog::getExistingDirectory(this,
@@ -322,9 +323,22 @@ bool Dialog::Pro(bool isIdent)//是否为识别
        Resume = Pro_BinSplit(t);
      }
   }
+  else if(Para[0] == tr("ccj Bin文件逻辑处理脚本V1.00")){//
+    if(Fun != 8){//脚本切换时
+      Fun = 8;
+      directoryLabel->setText("");
+      directoryButton->setEnabled(true);
+	    directoryButton->setText(tr("逻辑文件目录..."));
+	  }
+     if(isIdent == false){
+       if(BatNestDeep == 0) noteLabel->setText(tr("文件正在逻辑..."));
+       Resume = Pro_BinLogic(t);
+     }
+  }
+
   else{
     QMessageBox msgBox;
-    msgBox.setText(tr("首行文件描述不能识别，请加载正确的脚本文件!"));
+    msgBox.setText(tr("首行脚本功能描述不能识别，请加载正确的脚本文件!"));
     msgBox.exec();
 	  Resume = false;
   }

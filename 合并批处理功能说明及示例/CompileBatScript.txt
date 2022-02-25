@@ -45,6 +45,17 @@
   csvFile:    \配置功能编译说明及示例\uiGlobal.csv;        //需编译的文件
   outFile:    \批处理示例输出\uiGlobal.Bin;                 //指定需输出的文件名
 
+>>binLogic:   逻辑功能示例->Bin清除;                         //编译指令及此单元名称，含下述三要素缺一不可
+  scriptFile: \Bin文件逻辑功能说明及示例\Bin清除逻辑Script.txt;  //指定配置脚本位置
+  InDir:      \Bin文件逻辑功能说明及示例;                   //比较文件所在目录
+  outFile:    \Bin文件逻辑功能说明及示例\清除逻辑结果.Bin;    //指定需输出的文件名，即逻辑后的文件C
+
+>>binLogic:   逻辑功能示例->Bin清除;                         //编译指令及此单元名称，含下述三要素缺一不可
+  scriptFile: \Bin文件逻辑功能说明及示例\Bin合并逻辑Script.txt;  //指定配置脚本位置
+  InDir:      \Bin文件逻辑功能说明及示例;                   //比较文件所在目录
+  outFile:    \Bin文件逻辑功能说明及示例\合并逻辑结果.Bin;    //指定需输出的文件名，即逻辑后的文件C
+
+
 >>bineMerge: 合并bin示例文件;                              //合并资文件名
   scriptFile: \Bin文件合并功能说明及示例\MargeScript.txt;   //指定配置脚本位置，含上述生成的文件，字库,程序等
   InDir:      \Bin文件合并功能说明及示例;                  //需合并的相对目录，非此目录文件需用绝对路径

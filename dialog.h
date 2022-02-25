@@ -103,6 +103,7 @@ private:
     //bin文件合并与拆分
     bool Pro_BinMerge(QTextStream &t);    
     bool Pro_BinSplit(QTextStream &t);  
+    bool Pro_BinLogic(QTextStream &t);  
 
     //配置文件编译
     bool Pro_CfgCompile(QTextStream &t); 

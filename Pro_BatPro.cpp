@@ -62,6 +62,7 @@ bool  Dialog::Pro_BatPro(QTextStream &t) //返回true处理完成
       else if(para0 == ">>ePicTrans")curFunType = 4;
       else if(para0 == ">>stringCompile")curFunType = 6;
       else if(para0 == ">>binSplit")curFunType = 7;
+      else if(para0 == ">>binLogic")curFunType = 8;
       else{
 	      QMessageBox msgBox;
         msgBox.setText(QString::number(LinePos)  + tr("行：不能识别的编译器名称，注意区分大小写，编译中止"));
@@ -114,7 +115,8 @@ bool  Dialog::Pro_BatPro(QTextStream &t) //返回true处理完成
      (curFunType == 3) && (para0 == "csvFile") ||
      (curFunType == 4) && (para0 == "picFile") ||
      (curFunType == 6) && (para0 == "txtFile") ||
-     (curFunType == 7) && (para0 == "splitFile"))
+     (curFunType == 7) && (para0 == "splitFile") ||
+     (curFunType == 8) && (para0 == "InDir") )
     {
       if(UnitState < 2){
 	      QMessageBox msgBox;
@@ -137,11 +139,11 @@ bool  Dialog::Pro_BatPro(QTextStream &t) //返回true处理完成
     if(para0 == "outFile"){
       if(UnitState < 3){
 	      QMessageBox msgBox;
-        msgBox.setText(QString::number(LinePos)  + tr("行：输出前未指定编译器及脚本，编译中止"));
+        msgBox.setText(QString::number(LinePos)  + tr("行：输出前面：未指定编译器及脚本，编译中止"));
 	      msgBox.exec();
         openFileNameLabel->setText(prvScpriptName);
         directoryLabel->setText(prvDirName);
-        noteLabel->setText(tr("在第 ") + QString::number(LinePos)  + tr("  行出现编译错误，已中止！"));
+        noteLabel->setText(QString::number(LinePos)  + tr("行：输出前面：未指定编译器及脚本，编译中止"));
         return false;
       }
 
@@ -158,7 +160,7 @@ bool  Dialog::Pro_BatPro(QTextStream &t) //返回true处理完成
       if(Pro(false) == false){//正式处理异常，需退出
         openFileNameLabel->setText(prvScpriptName);
         directoryLabel->setText(prvDirName);
-        noteLabel->setText(tr("在第 ") + QString::number(LinePos) + tr("  行出现编译错误，已中止！"));
+        noteLabel->setText(tr("对第 ") + QString::number(LinePos) + tr("  行执输出输出时发生编译错误，\n注意检查上两行脚本或被处理文件是否有误，已中止！"));
         return false;
       }
       continue; //继续下一行

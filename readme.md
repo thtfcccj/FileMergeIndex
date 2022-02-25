@@ -1,5 +1,5 @@
 ### CCJ多功能文件处理与编译器 V2.0
-  目标可执行文件下载地址：https://download.csdn.net/download/thtfcccj/
+  目标可执行文件下载地址：https://download.csdn.net/download/thtfcccj/81188414
   源代码开源地址：https://github.com/thtfcccj/FileMergeIndex.git
 
 #### 说明
@@ -15,6 +15,9 @@
   * bin文件拆分 或数据提取
     + 将bin文件， 按给定的存放位置与指定条件(起始位置，长度) 拆分与提出取其数据：用于如：去掉字库中的无效字模等。
     + 说明及示例：见“bin文件拆分功能说明及示例”子目录及其readme.md
+
+  * bin文件逻辑 比较文件等功能
+    + 将两个文件对应字节位进行或，与， 异或(即比较),加，减, 置位，清零，赋值等
 
   * 配置功能编译 即常量编译器 功能：
     + 如图片在界面中的位置信息，颜色信息，要显示的常量字符串，常量信息等，编译为一个bin文件，以供MCU程序调用。
