@@ -62,9 +62,9 @@ bool  Dialog::Pro_ResourceMerge(QTextStream &t) //返回true处理完成
   Para = Para[0].split(','); //,分割多个参数
   //得到合并文件个数
   int binFileCount = Para[0].toInt();
-  if((binFileCount <= 0) || (binFileCount > 1000)){
+  if((binFileCount < 0) || (binFileCount > 1000)){
     QMessageBox msgBox;
-    msgBox.setText(tr("合并文件个数描述错误，第二行应为1~1000之间的数字，并以“;”结尾"));
+    msgBox.setText(tr("合并文件个数描述错误，第二行应为0~1000之间的数字，并以“;”结尾"));
     msgBox.exec();
     return false;
   }
@@ -86,12 +86,18 @@ bool  Dialog::Pro_ResourceMerge(QTextStream &t) //返回true处理完成
   //第四行起，为需合并文件绝对路径,以;空行结尾,先获得路径位置
   QStringList listPath;
   int ValidCount = 0;
-  for(; ValidCount < binFileCount; ValidCount++){
-	  Line = t.readLine();
+  if(binFileCount == 0) binFileCount = 1000;//最大允许合并
+  while(ValidCount < binFileCount){
+    if(t.atEnd()) break; //结束了
+	  Line = t.readLine().simplified(); //去除前后空格;
+    if((Line.size() == 0) || (Line[0] == '/') && ((Line[1] == '/'))){//空行或注解处理
+      continue; //继续下一行
+    }
+
+    ValidCount++; //行有效了！
 	  Para = Line.split(';'); //;后为注释
-    if(Para[0].isEmpty()) break; //结束了
     QString Pos;
-	  if(Para[0][0] == ' ') Pos = ' '; //空格表示中间预留
+	  if((Para[0].size() == 0) || (Para[0][0] == ' '))Pos = ' '; //空格表示中间预留
     else{
       QString curPara = Para[0].simplified(); //去除前后空格
       if(curPara[1] != ':')//当前工作路径
@@ -107,7 +113,7 @@ bool  Dialog::Pro_ResourceMerge(QTextStream &t) //返回true处理完成
     msgBox.exec();
     return false;
   }
-
+  if(binFileCount == 1000) binFileCount = ValidCount;//自动大小
   //============================================得到临时目标文件===================================
   QTemporaryFile distFile;
   if(!distFile.open()) {//临时文件创建失败

@@ -93,17 +93,15 @@ bool  Dialog::Pro_StringCompile(QTextStream &t) //返回true处理完成
   int ErrCount = 0;
   int realLintCount = 0;
   unsigned long curPos; //数据区偏移量
-  if(!txtLineCount){//自动时，先获取并填充行数
+  if(!txtLineCount){//自动时，先获取填充行数
      QTextStream txtLen(txtFile);//文本流
      while(!txtLen.atEnd()){txtLen.readLine(); realLintCount++; };
      txtFile->seek(0);//回到开始
-     ErrCount += Pro_fullLenData(dest, realLintCount, indexLen);
-     curPos = (realLintCount + 2) * indexLen;//首+尾
   }
   else{
     realLintCount = txtLineCount;
-    curPos = (realLintCount + 1) *indexLen;//尾
   }
+  curPos = (realLintCount + 1) *indexLen;//尾
 
   int ValidCount = 0;
   curPos +=  Base; //填充位置

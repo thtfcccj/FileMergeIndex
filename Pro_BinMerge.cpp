@@ -41,12 +41,16 @@ bool  Dialog::Pro_BinMerge(QTextStream &t) //返回true处理完成
   int binFileCount = 0;
   do{
     if(t.atEnd()) break; //结束了
-	  Line = t.readLine();
+	  Line = t.readLine().simplified(); //去除前后空格;
+    if((Line.size() == 0) || (Line[0] == '/') && ((Line[1] == '/'))){//空行或注解处理
+      continue; //继续下一行
+    }
+
 	  Para = Line.split(';'); //;后为注释
 
 	  unsigned long base, prvBase = 0;
     QString Pos;
-	  if(Para[0][0] == ' ') {
+	  if((Para[0].size() == 0) || (Para[0][0] == ' ')){
 		  Pos = ' '; //空格表示中间预留
       base = 0;
     }
