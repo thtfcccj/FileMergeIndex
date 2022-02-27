@@ -169,7 +169,7 @@ bool  Dialog::Pro_BatPro(QTextStream &t) //返回true处理完成
 
       BatNestOutFile.insert(BatNestDeep - 1,OutFile);
       //更新提示
-      noteLabel->setText(tr("正在编译: ") + curUnitName + tr("  单元,输出:") + OutFile);
+      noteLabel->setText(tr("正在编译:【") + curUnitName + tr("】单元,输出:") + OutFile);
 
        Delay_MSec(BatDelay);//批处理时，用于看清执行情况
       if(Pro(false) == false){//正式处理异常，需退出

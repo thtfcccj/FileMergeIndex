@@ -52,6 +52,15 @@ bool  Dialog::Pro_StringCompile(QTextStream &t) //返回true处理完成
     int len = Para[0].toInt(&OK);
     if((OK == true) && (len <= 4) && (len >= 1)) indexLen = len;
   }
+  //第6行， 是否在字符串末尾插入结束字符，0时无
+  Line = t.readLine();
+  bool haveEnd = false; //默认无
+  if(!Line.isEmpty()){
+    Para = Line.split(';'); //;后为注释
+    bool end = Para[0].toInt(&OK);
+    if(OK == true) haveEnd = end;
+  }
+
 
   //=======================================获取并缓存得到路径位置========================================
   QFile *txtFile = new QFile(directoryLabel->text());
@@ -84,7 +93,7 @@ bool  Dialog::Pro_StringCompile(QTextStream &t) //返回true处理完成
   int ErrCount = 0;
   int realLintCount = 0;
   unsigned long curPos; //数据区偏移量
-  if(!txtLineCount){//自动时，先获取并填充文件长度
+  if(!txtLineCount){//自动时，先获取并填充行数
      QTextStream txtLen(txtFile);//文本流
      while(!txtLen.atEnd()){txtLen.readLine(); realLintCount++; };
      txtFile->seek(0);//回到开始
@@ -114,6 +123,7 @@ bool  Dialog::Pro_StringCompile(QTextStream &t) //返回true处理完成
     }
     QByteArray ba =  Line.toLocal8Bit(); //用单个转换方式实现以支持中文，不支持转义字符
     unsigned long  Size = ba.size();
+    if(haveEnd) Size++;//插入结束字符
     if(Size >= (0xffffffff - curPos)){
 	    QMessageBox finalmsgBox;
 	    QString finalMsg = tr(" 合并后文件过大,索引填充已中止！");
@@ -158,6 +168,7 @@ bool  Dialog::Pro_StringCompile(QTextStream &t) //返回true处理完成
     for(unsigned long i = 0; i < Size; i++) {
       dest << (quint8)(ba.at(i));
     }
+    if(haveEnd) dest << (quint8)'\0';//插入结束字符
   }while(1);
 
   //======================================正确时最后保存数据========================================
