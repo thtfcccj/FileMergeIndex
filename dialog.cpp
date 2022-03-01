@@ -244,7 +244,7 @@ bool Dialog::Pro(bool isIdent)//是否为识别
      if(Fun != 1){//脚本切换时
        Fun = 1;
        directoryLabel->setText("");
-       directoryButton->setEnabled(true);
+       if(BatNestDeep == 0) directoryButton->setEnabled(true);
 	     directoryButton->setText(tr("打开待合并文件所在目录..."));
 	   }
      if(isIdent == false){
@@ -257,7 +257,7 @@ bool Dialog::Pro(bool isIdent)//是否为识别
     if(Fun != 2){//脚本切换时
       Fun = 2;
       directoryLabel->setText("");
-      directoryButton->setEnabled(true);
+      if(BatNestDeep == 0) directoryButton->setEnabled(true);
 	    directoryButton->setText(tr("打开待合并文件所在目录..."));
 	  }
      if(isIdent == false){
@@ -270,7 +270,7 @@ bool Dialog::Pro(bool isIdent)//是否为识别
     if(Fun != 3){//脚本切换时
       Fun = 3;
       directoryLabel->setText("");
-      directoryButton->setEnabled(true);
+      if(BatNestDeep == 0) directoryButton->setEnabled(true);
 	    directoryButton->setText(tr("打开需编译的csv格式文件..."));
 	  }
      if(isIdent == false){
@@ -282,7 +282,7 @@ bool Dialog::Pro(bool isIdent)//是否为识别
     if(Fun != 4){//脚本切换时
       Fun = 4;
       directoryLabel->setText("");
-      directoryButton->setEnabled(true);
+      if(BatNestDeep == 0) directoryButton->setEnabled(true);
 	    directoryButton->setText(tr("打开需转换的图像..."));
 	  }
      if(isIdent == false){
@@ -294,7 +294,7 @@ bool Dialog::Pro(bool isIdent)//是否为识别
     if(Fun != 5){//脚本切换时
       Fun = 5;
       directoryLabel->setText("");
-	    directoryButton->setEnabled(true);
+	    if(BatNestDeep == 0) directoryButton->setEnabled(true);
       directoryButton->setText(tr("脚本内指定文件总目录..."));
 	  }
     if(isIdent == false){
@@ -310,7 +310,7 @@ bool Dialog::Pro(bool isIdent)//是否为识别
     if(Fun != 6){//脚本切换时
       Fun = 6;
       directoryLabel->setText("");
-      directoryButton->setEnabled(true);
+      if(BatNestDeep == 0) directoryButton->setEnabled(true);
 	    directoryButton->setText(tr("字符串资源文件所在目录..."));
 	  }
      if(isIdent == false){
@@ -322,7 +322,7 @@ bool Dialog::Pro(bool isIdent)//是否为识别
     if(Fun != 7){//脚本切换时
       Fun = 7;
       directoryLabel->setText("");
-      directoryButton->setEnabled(true);
+      if(BatNestDeep == 0) directoryButton->setEnabled(true);
 	    directoryButton->setText(tr("被拆分文件..."));
 	  }
      if(isIdent == false){
@@ -334,7 +334,7 @@ bool Dialog::Pro(bool isIdent)//是否为识别
     if(Fun != 8){//脚本切换时
       Fun = 8;
       directoryLabel->setText("");
-      directoryButton->setEnabled(true);
+      if(BatNestDeep == 0) directoryButton->setEnabled(true);
 	    directoryButton->setText(tr("逻辑文件目录..."));
 	  }
      if(isIdent == false){

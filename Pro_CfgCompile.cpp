@@ -47,8 +47,11 @@ unsigned char Dialog::toRGBM666(unsigned long ARGB)//标准色转RGBM666,四舍五入
 }
 
 //编译一个变量数据
-int Dialog::Pro_CfgCompileData(QDataStream &dest, QString &Desc, QString &Data) 
+int Dialog::Pro_CfgCompileData(QDataStream &dest, QString &DescOrg, QString &DataOrg) 
 {
+    QString Desc = DescOrg.simplified(); //去除前后空格
+    QString Data = DataOrg.simplified(); //去除前后空格
+
     //以最大方式预读
     bool bs64,bu64, bh64;
     qint64 s64 =  Data. toLongLong (&bs64,10);
@@ -259,15 +262,19 @@ bool  Dialog::Pro_CfgCompile(QTextStream &t) //返回true处理完成
   int ValidLine = 0;//有效行计数
   int DataCount = 0;//编译变量个数
   do{
+    if(csvStream.atEnd()) break; //结束了
     lineCount++;
     Line = csvStream.readLine();
-    if(Line.isEmpty()) break; //空行表示结束了
-
+    if(Line.isEmpty()) continue; //本行无数据
+    Line = Line.simplified(); //去除前后空格
+    if((Line[0] == '"') || (Line[0] == '/') && (Line[1] == '/')){//注解处理
+      continue; //继续下一行
+    }
     Para = Line.split(','); //csv格式分割符
 
 	  if(Para.count() < 4){//文件格式不对了
 	    QMessageBox finalmsgBox;
-	    QString finalMsg = QString::number(lineCount)  + tr("行：格式错误,编译中止!"); 
+	    QString finalMsg = QString::number(lineCount)  + tr("行：格式错误,“,”分隔符少于4个，编译中止!"); 
 	    finalmsgBox.setText(finalMsg);
 	    finalmsgBox.exec();
 
