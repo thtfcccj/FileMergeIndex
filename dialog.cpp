@@ -179,6 +179,18 @@ void Dialog::setOpenFileName()
 		 if (!fileName.isEmpty())
 		  	directoryLabel->setText(fileName);
 	 }
+	 else if(Fun == 9){//PNG转RGBA
+		 QFileDialog::Options options;
+		 QString selectedFilter;
+		 QString fileName = QFileDialog::getOpenFileName(this,
+									tr("PNG图像文件..."),
+									openFileNameLabel->text(),
+									tr("PNG图片 (*.png)"),
+									&selectedFilter,
+									options);
+		 if (!fileName.isEmpty())
+		  	directoryLabel->setText(fileName);
+	 }
 
 	 else{//打开目录
 		 QFileDialog::Options options = QFileDialog::DontResolveSymlinks | QFileDialog::ShowDirsOnly;
@@ -342,6 +354,19 @@ bool Dialog::Pro(bool isIdent)//是否为识别
        Resume = Pro_BinLogic(t);
      }
   }
+  else if(Para[0] == tr("ccj PNG文件转RGBA数据处理脚本V1.00")){//
+    if(Fun != 9){//脚本切换时
+      Fun = 9;
+      directoryLabel->setText("");
+      if(BatNestDeep == 0) directoryButton->setEnabled(true);
+	    directoryButton->setText(tr("打开PNG格式图像..."));
+	  }
+     if(isIdent == false){
+       if(BatNestDeep == 0) noteLabel->setText(tr("正在转换..."));
+       Resume = Pro_Png2RGBA(t);
+     }
+  }
+
 
   else{
     QMessageBox msgBox;

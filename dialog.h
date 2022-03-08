@@ -160,6 +160,9 @@ private:
     //批处理
     bool Pro_BatPro(QTextStream &t); 
 
+    //png图像转出
+    bool Pro_Png2RGBA(QTextStream &t);
+
     int BatNestDeep; //批处理嵌套深度
     int BatDelay;   //批处理插入的延时
     QList<QString> BatNestOutFile; //批处理时的输出文件
