@@ -119,7 +119,7 @@ QString  Dialog::Png2epic(QDataStream &pic,
   if(FunMask & 0x01){//需要数据头时
     unsigned char vLenMask = FunMask & 0x80; //可变长度位
     if(HeaderMask & 0x01) {
-      char Flag = 'n';//n前缀
+      char Flag = 'p';//n前缀
       if(vLenMask) Flag |= 0x80; //压缩数据头标志
       dest << (quint8)Flag;
     }
