@@ -52,6 +52,14 @@ int Dialog::Pro_CfgCompileData(QDataStream &dest, QString &DescOrg, QString &Dat
     QString Desc = DescOrg.simplified(); //去除前后空格
     QString Data = DataOrg.simplified(); //去除前后空格
 
+    if(Desc == "STR"){//精简型字符串
+      //暂不支持转义字符,批量转换方式测试中文字符乱码，用单个转换方式实现：
+      QByteArray ba =  Data.toLocal8Bit(); 
+      int Len = ba.size();
+      for(int i = 0; i < Len; i++) dest << (quint8)ba[i];
+      return Len;
+    }
+
     //以最大方式预读
     bool bs64,bu64, bh64;
     qint64 s64 =  Data. toLongLong (&bs64,10);
@@ -321,7 +329,7 @@ bool  Dialog::Pro_CfgCompile(QTextStream &t) //返回true处理完成
       return false;
 	  }
     //======================================数据区第二,三行编译========================================
-    if(Para[1] == "STRING"){//字符串为单变量
+    if(Para[1] == "STRING"){//字符串为单变量时
       //暂不支持转义字符,批量转换方式测试中文字符乱码，用单个转换方式实现：
       QByteArray ba =  Para[2].toLocal8Bit(); 
       int Len = ba.size();
