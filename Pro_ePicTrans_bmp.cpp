@@ -51,6 +51,7 @@ QString  Dialog::Bmp2epic(QDataStream &pic,
 
   Data = Lsb2Ul(&raw[14 + 32]);//说明位图使用的调色板中的颜色索引数，为0说明使用所有；
   if(Data > 257) return  QString(tr("调色板数量域异常"));//允许1种透明色
+  if(Data == 256) biCompression |= 0x80;//标识为256
   unsigned short biClrUsed = Data;
   delete raw; laterDelRaw = NULL;
 
@@ -60,8 +61,10 @@ QString  Dialog::Bmp2epic(QDataStream &pic,
    if(biBitCount <= 8){//8位以下有查找表
      PaletteSize = (unsigned short)1 << biBitCount;
      if(biClrUsed != 0){//0使用全部
-       if(biClrUsed > (PaletteSize + 1)) return  QString(tr("调色板数量异常"));//允许1种透明色
-       else PaletteSize = biClrUsed;//使用局部
+       //if(biClrUsed > (PaletteSize + 1)) //实测4位图像保存为8位时，也是0xff 256色调色板,故注解掉
+       //  return  QString(tr("调色板数量异常"));//允许1种透明色
+       //else 
+         PaletteSize = biClrUsed;//使用局部
      }
      PaletteSize *= 4;//查找表转换为字节
    }
