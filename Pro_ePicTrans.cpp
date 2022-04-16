@@ -117,6 +117,23 @@ bool  Dialog::Pro_ePicTrans(QTextStream &t) //返回true处理完成
     unsigned long Mask = Para[0].toUInt(&OK, 16);
     if(OK == true) PngDataMask = Mask;
   }
+  //第7行GIF时数据块掩码
+  GifDataMask = 0x800C; //默认0x800C,即仅含一帧表基图像数据及其最小代码长度位
+  Line = t.readLine();
+  if(t.status() == QTextStream::Ok){
+    Para = Line.split(';'); //;后为注释
+    unsigned long Mask = Para[0].toUInt(&OK, 16);
+    if(OK == true) GifDataMask = Mask;
+  }
+  //第8行;//GIF等动图时，图像数据位置
+  PicFramePos = 0; //默认0
+  Line = t.readLine();
+  if(t.status() == QTextStream::Ok){
+    Para = Line.split(';'); //;后为注释
+    unsigned long Mask = Para[0].toUInt(&OK);
+    if(OK == true) PicFramePos = Mask;
+  }
+
  //======================================加载支持的图像文件=======================================
   QFile *picFile = new QFile(directoryLabel->text());
   if(picFile->open(QIODevice::ReadOnly) == false){//文件打开失败

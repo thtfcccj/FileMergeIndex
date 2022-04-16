@@ -146,6 +146,15 @@ private:
                                       unsigned char FunMask,
                                       unsigned char HeaderMask,
                                       unsigned char toColorType);
+    //GIF得到并填充调色板
+    //返回正调色板占用字节数，负值调色板异常
+    int FullGifPalette(QDataStream &pic,
+                           QDataStream &dest,
+                           unsigned char mcrspixel, //b8:含调色板，b0~2调色板大小-1;
+                           unsigned char EnFullDesc,//是否填充至目标
+                           unsigned char FunMask,
+                           unsigned char toColorType);
+
    //Png格式转ePic, 返回空格符转换正确，否则描述错识位置
     QString  Png2epic(QDataStream &pic,
                                       QDataStream &dest,
@@ -156,6 +165,7 @@ private:
 
     char *laterDelRaw;//ePic图像处理中过中图像数据错误时，等删除的指针
     unsigned long PngDataMask; //PNG时数据块掩码
+    unsigned long GifDataMask; //Gif时数据块掩码
 
     //批处理
     bool Pro_BatPro(QTextStream &t); 
@@ -165,6 +175,7 @@ private:
 
     int BatNestDeep; //批处理嵌套深度
     int BatDelay;   //批处理插入的延时
+    int PicFramePos;//GIF等动图时，图像数据位置
     QList<QString> BatNestOutFile; //批处理时的输出文件
     QString WorkDir;//批文件所有文件的总目录
 };
