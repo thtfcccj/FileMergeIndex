@@ -47,6 +47,8 @@ Dialog::Dialog(QWidget *parent)
 : QDialog(parent),Fun(-1),BatNestOutFile(),WorkDir()
 {
     int frameStyle = QFrame::Sunken | QFrame::Panel;
+    settings = new QSettings("Settings.ini",QSettings::IniFormat);
+
 
     openFileNameLabel = new QLabel;
     openFileNameLabel->setFrameStyle(frameStyle);
@@ -96,20 +98,25 @@ Dialog::Dialog(QWidget *parent)
 
     setLayout(vlayout);
 
-    setWindowTitle(tr("CCJ多功能文件处理与编译器 V2.0   thtfcccj倾情制作"));
+    setWindowTitle(tr("CCJ多功能文件处理与编译器 V2.1   thtfcccj倾情制作"));
 }
 
 void Dialog::setOpenFileName()
 {
     QFileDialog::Options options;
     QString selectedFilter;
+    QString Path = openFileNameLabel->text();
+    if(Path.isEmpty()){
+      Path = settings->value("LastScriptFile").toString();
+    }
     QString fileName = QFileDialog::getOpenFileName(this,
                                 tr("脚本文件..."),
-                                openFileNameLabel->text(),
+                                Path,
                                 tr("Text Files (*.txt)"),
                                 &selectedFilter,
                                 options);
 	if (!fileName.isEmpty()){
+      settings->setValue("LastScriptFile",fileName);
       noteLabel->setText(tr(""));
       openFileNameLabel->setText(fileName);
       BatNestDeep = 0;//从头开始
@@ -125,32 +132,37 @@ void Dialog::setOpenFileName()
 		 QString selectedFilter;
 		 QString fileName = QFileDialog::getOpenFileName(this,
 									tr("需编译的csv格式文件..."),
-									openFileNameLabel->text(),
+									settings->value("LastStringCompileFile").toString(),
 									tr("csv Files (*.csv)"),
 									&selectedFilter,
 									options);
-		 if (!fileName.isEmpty())
+     if (!fileName.isEmpty()){
 		  	directoryLabel->setText(fileName);
+        settings->setValue("LastStringCompileFile",fileName);
+     }
 	 }
 	 else if(Fun == 4){//打开支持的图像文件
 		 QFileDialog::Options options;
 		 QString selectedFilter;
 		 QString fileName = QFileDialog::getOpenFileName(this,
 									tr("支持的图像文件..."),
-									openFileNameLabel->text(),
+									settings->value("LastImageFile").toString(),
 									tr("支持的图片 (*.png;*.wbm;*.bmp;*.gif);;png Files (*.png);;wbmp Files (*.wbm);;bmp Files (*.bmp);;gif Files (*.gif)"),
 									&selectedFilter,
 									options);
-		 if (!fileName.isEmpty())
+     if (!fileName.isEmpty()){
 		  	directoryLabel->setText(fileName);
+        settings->setValue("LastImageFile",fileName);
+     }
 	 }
 	 else if(Fun == 5){//打开批处理脚本文件
 		 QFileDialog::Options options = QFileDialog::DontResolveSymlinks | QFileDialog::ShowDirsOnly;
 		 QString directory = QFileDialog::getExistingDirectory(this,
 									 tr("选择脚本内文总目录..."),
-									 directoryLabel->text(),
+									 settings->value("LastBatProPath").toString(),
 									 options);
      if (!directory.isEmpty()){
+       settings->setValue("LastBatProPath",directory);
 			 directoryLabel->setText(directory);
        WorkDir = directory;
      }
@@ -160,46 +172,61 @@ void Dialog::setOpenFileName()
 		 QString selectedFilter;
 		 QString fileName = QFileDialog::getOpenFileName(this,
 									tr("需编译的txt格式字符串文件..."),
-									openFileNameLabel->text(),
+									settings->value("LastStringFile").toString(),
 									tr("txt Files (*.txt)"),
 									&selectedFilter,
 									options);
-		 if (!fileName.isEmpty())
-		  	directoryLabel->setText(fileName);
+     if (!fileName.isEmpty()){
+       settings->setValue("LastStringFile", fileName);
+		   directoryLabel->setText(fileName);
+     }
    }
    else if(Fun == 7){//打开需拆分的文件
 		 QFileDialog::Options options;
 		 QString selectedFilter;
 		 QString fileName = QFileDialog::getOpenFileName(this,
 									tr("需拆分的文件..."),
-									openFileNameLabel->text(),
+									settings->value("LastBinSplitFile").toString(),
 									tr("*.* Files (*.*)"),
 									&selectedFilter,
 									options);
-		 if (!fileName.isEmpty())
+     if (!fileName.isEmpty()){
 		  	directoryLabel->setText(fileName);
+        settings->setValue("LastBinSplitFile", fileName);
+     }
 	 }
 	 else if(Fun == 9){//PNG转RGBA
 		 QFileDialog::Options options;
 		 QString selectedFilter;
 		 QString fileName = QFileDialog::getOpenFileName(this,
 									tr("PNG图像文件..."),
-									openFileNameLabel->text(),
+									settings->value("LastPngFile").toString(),
 									tr("PNG图片 (*.png)"),
 									&selectedFilter,
 									options);
-		 if (!fileName.isEmpty())
+     if (!fileName.isEmpty()){
 		  	directoryLabel->setText(fileName);
+        settings->setValue("LastPngFile", fileName);
+     }
 	 }
-
 	 else{//打开目录
 		 QFileDialog::Options options = QFileDialog::DontResolveSymlinks | QFileDialog::ShowDirsOnly;
+     QString Path;
+     if(Fun == 1) Path = settings->value("LastResourceMergePath").toString();
+     else if(Fun == 2) Path = settings->value("LastBinMergePath").toString();
+     else if(Fun == 8) Path = settings->value("LastBinLogicPath").toString();
+     else Path = settings->value("LastDefaultPath").toString();
 		 QString directory = QFileDialog::getExistingDirectory(this,
 									 tr("待处理文件目录..."),
-									 directoryLabel->text(),
+									 Path,
 									 options);
-		 if (!directory.isEmpty())
+     if (!directory.isEmpty()){
 			 directoryLabel->setText(directory);
+       if(Fun == 1)settings->setValue("LastResourceMergePath", directory);
+       else if(Fun == 2) settings->setValue("LastBinMergePath", directory);
+       else if(Fun == 8) settings->setValue("LastBinLogicPath", directory);
+       else settings->setValue("LastDefaultPath", directory);
+     }
 	 }
 
    noteLabel->setText(tr(""));

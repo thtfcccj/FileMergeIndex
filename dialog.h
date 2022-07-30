@@ -44,6 +44,7 @@
 
 #include <QtGui>
 #include <QDialog>
+#include <QSettings>
 
 QT_BEGIN_NAMESPACE
 class QCheckBox;
@@ -76,6 +77,7 @@ private:
     QLabel *openFileNameLabel;
 	  QLabel *directoryLabel;
 	  QLabel *noteLabel;
+    QSettings *settings; // 配置文件对象
  
   unsigned char Fun;	
   bool IsDisFinal; //禁止提示完成
